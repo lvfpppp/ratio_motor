@@ -1,8 +1,7 @@
 #include "can_receive.h"
 #include "HCanID_data.h"
-#include "drv_motor.h"
+#include "canister.h"
 
-extern Motor_t M3508;
 
 /***
 * @brief    根据can1接收到的ID进入不同的处理函数
@@ -14,7 +13,7 @@ void can1_rec(struct rt_can_msg *msg)
     switch(msg->id)
     {
         case MOTOR_ID_1:
-            motor_readmsg(msg,&M3508.dji);
+            Refresh_Motor(msg);
             return;
 
         case MOTOR_ID_2:

@@ -1,52 +1,67 @@
 #include "drv_canthread.h"
-#include "HCanID_data.h"
-#include "drv_motor.h"
+#include "canister.h"
 #include <board.h>
 
-#define IF_INIT_OK	RT_ASSERT(res == RT_EOK); //是否初始化成功
+#define CAN_RS_PIN      GET_PIN(A,15)
+#include <stdio.h>
+#include <math.h>
 
-Motor_t M3508;
+#define PATROL_START    0
+#define PATROL_END      180
 
-#define CAN_RS_PIN    GET_PIN(A,15)
-#define MAX_3508_RPM    (469.0f)
-#define MOTOR_3508_RATIO     (3591.0f/187.0f)
+Patrol_e now_pos;
 
-void Motor_Init(void)
+/* 到达设定值的回调函数 */
+void Canister_Set_Callback(Motor_t *motor,Patrol_e kind)
 {
-    motor_init(&M3508,MOTOR_ID_1,MOTOR_3508_RATIO,ANGLE_CTRL_EXTRA,8192,180,-180);
-    pid_init(&M3508.ang,30,0,0,1000,MAX_3508_RPM*MOTOR_3508_RATIO,-MAX_3508_RPM*MOTOR_3508_RATIO);
-    pid_init(&M3508.spe,10,0.1,0,1000,10000,-10000);
+    /* 输出到达设定值的当前角度值 */
+    char txt[20];
+    sprintf(txt,"now angle: %3.3f",Motor_Read_NowAngle(motor));
+    rt_kprintf("%s\n",txt);
 
-    /*等待电机第一次通信完毕*/
-	while(M3508.dji.Data_Valid == 0) 
-    {rt_thread_mdelay(50);}
+    now_pos = kind;
 }
 
-void Motor_Cal(void)
+void Test_Canister(void)
 {
+    Patrol_Set_StartPos(PATROL_START);
+    Patrol_Set_EndPos(PATROL_END);
+
+    Register_StartSet_Callback(Canister_Set_Callback);
+    Register_EndSet_Callback(Canister_Set_Callback);
+
+    Canister_Init();
+
+    static rt_uint8_t _cnt = 0;
+
     while(1)
     {
-        Motor_AnglePIDCalculate(&M3508,Motor_Read_NowAngle(&M3508));
+        if (now_pos == P_START)
+        {
+            Canister_Set_Position(PATROL_END);
+            rt_thread_mdelay(2000);
+        }
+        else if(now_pos == P_END)
+        {
+            Canister_Set_Position(PATROL_START);
+            rt_thread_mdelay(2000);
+        }
 
-        Motor_Write_SetSpeed_ABS(&M3508,M3508.ang.out);
-		
-        Motor_SpeedPIDCalculate(&M3508,Motor_Read_NowSpeed(&M3508));
-
-        motor_current_send(can1_dev,STDID_launch,Motor_Read_OutSpeed(&M3508),0,0,0);
-
-        rt_thread_mdelay(5);
+        rt_thread_mdelay(1);
     }
 }
+
 
 int main(void)
 {
 	rt_err_t res = RT_EOK;
 
+    /* can硬件电路要求,can_rs引脚拉低 */
     rt_pin_mode(CAN_RS_PIN, PIN_MODE_OUTPUT_OD);
     rt_pin_write(CAN_RS_PIN, PIN_LOW);
 
-	res = Can1_Init();				IF_INIT_OK
+	res = Can1_Init();
+    RT_ASSERT(res == RT_EOK);
 
-    Motor_Init();
-    Motor_Cal();
+	Test_Canister();
 }
