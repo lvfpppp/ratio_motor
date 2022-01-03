@@ -11,35 +11,38 @@
 #define POSITION_MAX        (180)               //最大角度限位，单位度
 #define POSITION_MIN        (0)
 
-#define ANGLE_ERR_PRECISION (1)                 //单位度
+#define ANGLE_ERR_PRECISION (2.5)                //默认辨识精度,单位度
 
 typedef enum
 {
-    P_START,
-    P_END,
-} Patrol_e;
+    PATROL_START = 0,
+    PATROL_END = 1,
+    MOTOR_SET = 2,
+    
+    TARGET_NUM,
+} Target_e;
 
 typedef struct
 {
+    Target_e kind;
     float pos;
     rt_uint8_t flag;    //用于触发一次回调
 
     float err_precision;      //角度误差精度
-    void (*arrive_cb)(Motor_t *,Patrol_e);
+    void (*arrive_cb)(Motor_t *,Target_e);
 
-} patrol_t;
+} Target_t;
 
-typedef void (*Func_Arrive)(Motor_t *,Patrol_e) ;
+typedef void (*Func_Arrive)(Motor_t *,Target_e) ;
 
 rt_err_t Canister_Init(void);
-void Refresh_Motor(struct rt_can_msg *msg);
+void Canister_Refresh_Motor(struct rt_can_msg *msg);
 void Canister_Set_Position(float angle);
 
-void Register_StartSet_Callback(Func_Arrive func);
-void Register_EndSet_Callback(Func_Arrive func);
+void Target_Set_Pos(float pos, Target_e kind);
+void Target_Register_Callback(Func_Arrive func, Target_e kind);
+void Target_Set_Precision(float precision, Target_e kind);
 
-void Patrol_Set_StartPos(float pos);
-void Patrol_Set_EndPos(float pos);
 
 
 #endif

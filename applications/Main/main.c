@@ -2,48 +2,61 @@
 #include "canister.h"
 #include <board.h>
 
-#define CAN_RS_PIN      GET_PIN(A,15)
+#define CAN_RS_PIN     GET_PIN(A,15)
 #include <stdio.h>
 #include <math.h>
 
-#define PATROL_START    0
-#define PATROL_END      180
+#define P_START_POS    30
+#define P_END_POS      120
 
-Patrol_e now_pos;
+Target_e now_pos;
 
 /* 到达设定值的回调函数 */
-void Canister_Set_Callback(Motor_t *motor,Patrol_e kind)
+void Patrol_Callback(Motor_t *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
-    char txt[20];
-    sprintf(txt,"now angle: %3.3f",Motor_Read_NowAngle(motor));
-    rt_kprintf("%s\n",txt);
+    char txt[10];
+    sprintf(txt,"%3.3f",Motor_Read_NowAngle(motor));
+    
+    if (kind == PATROL_START)
+        rt_kprintf("Patrol Start: %s\n",txt);
+    else if (kind == PATROL_END)
+        rt_kprintf("Patrol End  : %s\n",txt);
 
     now_pos = kind;
 }
 
+void PID_Arrive_Callback(Motor_t *motor,Target_e kind)
+{
+    /* 输出到达设定值的当前角度值 */
+    char txt[10];
+    sprintf(txt,"%3.3f",Motor_Read_NowAngle(motor));
+    rt_kprintf("PID: %s\n",txt);
+}
+
 void Test_Canister(void)
 {
-    Patrol_Set_StartPos(PATROL_START);
-    Patrol_Set_EndPos(PATROL_END);
-
-    Register_StartSet_Callback(Canister_Set_Callback);
-    Register_EndSet_Callback(Canister_Set_Callback);
-
     Canister_Init();
 
-    static rt_uint8_t _cnt = 0;
+    Target_Set_Pos(P_START_POS,PATROL_START);
+    Target_Register_Callback(Patrol_Callback,PATROL_START);
+
+    Target_Set_Pos(P_END_POS,PATROL_END);
+    Target_Register_Callback(Patrol_Callback,PATROL_END);
+
+    Target_Set_Precision(1,MOTOR_SET);
+    Target_Register_Callback(PID_Arrive_Callback,MOTOR_SET);
 
     while(1)
     {
-        if (now_pos == P_START)
+        if (now_pos == PATROL_START)
         {
-            Canister_Set_Position(PATROL_END);
+            Canister_Set_Position(P_END_POS);
             rt_thread_mdelay(2000);
         }
-        else if(now_pos == P_END)
+        else if(now_pos == PATROL_END)
         {
-            Canister_Set_Position(PATROL_START);
+            Canister_Set_Position(P_START_POS);
             rt_thread_mdelay(2000);
         }
 

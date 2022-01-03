@@ -13,7 +13,7 @@ void can1_rec(struct rt_can_msg *msg)
     switch(msg->id)
     {
         case MOTOR_ID_1:
-            Refresh_Motor(msg);
+            Canister_Refresh_Motor(msg);
             return;
 
         case MOTOR_ID_2:
