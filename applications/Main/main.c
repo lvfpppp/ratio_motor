@@ -26,6 +26,7 @@ void Patrol_Callback(Motor_t *motor,Target_e kind)
     now_pos = kind;
 }
 
+/* 电机pid的角度pid达到设定值附近时,反馈数据 */
 void PID_Arrive_Callback(Motor_t *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
@@ -34,18 +35,17 @@ void PID_Arrive_Callback(Motor_t *motor,Target_e kind)
     rt_kprintf("PID: %s\n",txt);
 }
 
+/* 能实现电机的巡逻功能,并在到达目标点时,反馈数据 */
 void Test_Canister(void)
 {
-    Canister_Init();
-
     Target_Set_Pos(P_START_POS,PATROL_START);
-    Target_Register_Callback(Patrol_Callback,PATROL_START);
+    Register_Target_Callback(Patrol_Callback,PATROL_START);
 
     Target_Set_Pos(P_END_POS,PATROL_END);
-    Target_Register_Callback(Patrol_Callback,PATROL_END);
+    Register_Target_Callback(Patrol_Callback,PATROL_END);
 
     Target_Set_Precision(1,MOTOR_SET);
-    Target_Register_Callback(PID_Arrive_Callback,MOTOR_SET);
+    Register_Target_Callback(PID_Arrive_Callback,MOTOR_SET);
 
     while(1)
     {
@@ -63,8 +63,33 @@ void Test_Canister(void)
         rt_thread_mdelay(1);
     }
 }
+/////////////////////////////////////////////////////////////
+void Adjust_Complete_Callback(float range)
+{
+    char txt[10];
+    sprintf(txt,"%3.3f",range);
+    rt_kprintf("motor adjust result:\n");
+    rt_kprintf("min angle: 0\n");
+    rt_kprintf("max angle: %s\n",txt);
+}
 
+float test_angle = 0;
+void Test_Adjust(void)
+{
+    Register_Adjust_Callback(Adjust_Complete_Callback);
 
+    Canister_Adjust_Init();
+    Canister_Adjust_Start();
+
+    while(1)
+    {
+        if (Canister_Get_Adjust_State() == 0)
+            Canister_Set_Position(test_angle);
+        
+        rt_thread_mdelay(10);
+    }
+}
+/////////////////////////////////////////////////////////////
 int main(void)
 {
 	rt_err_t res = RT_EOK;
@@ -76,5 +101,8 @@ int main(void)
 	res = Can1_Init();
     RT_ASSERT(res == RT_EOK);
 
-	Test_Canister();
+    Canister_Init();
+
+	// Test_Canister();
+    Test_Adjust();
 }

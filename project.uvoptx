@@ -170,6 +170,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>target_point</ItemText>
         </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>canister</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>
@@ -186,6 +191,16 @@
           <count>2</count>
           <WinNumber>2</WinNumber>
           <ItemText>now_pos</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>en_angle_loop</ItemText>
+        </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>en_pos_adjust</ItemText>
         </Ww>
       </WatchWindow2>
       <Tracepoint>
