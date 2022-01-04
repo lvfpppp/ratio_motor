@@ -93,7 +93,7 @@ static void Canister_Motor_Init(void)
 {
     motor_init(&M3508,MOTOR_ID_1,CANISTER_MOTOR_RATIO,ANGLE_CTRL_FULL,8192,180,-180);//不选择ANGLE_CTRL_EXTRA,取消角度闭环的就近原则
     pid_init(&M3508.ang,30,0,0,1000,CANISTER_MAX_3508RPM*CANISTER_MOTOR_RATIO,-CANISTER_MAX_3508RPM*CANISTER_MOTOR_RATIO);
-    pid_init(&M3508.spe,10,0.1,0,1000,10000,-10000);
+    pid_init(&M3508.spe,15,0.05,10,1000,10000,-10000);
 
     /*等待电机第一次通信完毕*/
 	while(M3508.dji.Data_Valid == 0) 
