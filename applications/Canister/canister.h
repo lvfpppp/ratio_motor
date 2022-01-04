@@ -8,8 +8,8 @@
 #define CANISTER_MOTOR_RATIO    (3591.0f/187.0f)   //机械结构传动比
 #define CANISTER_PERIOD         (1)                //定时器周期，单位ms
 
-#define DEFAULT_POS_MAX         (180)              //最大角度限位，单位度
-#define DEFAULT_POS_MIN         (0)
+#define DEFAULT_POS_MAX         (270)//(180)              //最大角度限位，单位度
+#define DEFAULT_POS_MIN         (90)//(0)
 
 #define DEFAULT_ERR_PRECISION   (2.5)              //默认辨识精度,单位度
 
@@ -52,6 +52,7 @@ typedef struct
 rt_err_t Canister_Init(void);
 void Canister_Refresh_Motor(struct rt_can_msg *msg);
 void Canister_Set_Position(float angle);
+float Canister_Get_NowPos(void);
 
 void Target_Set_Pos(float pos, Target_e kind);
 void Register_Target_Callback(Func_Arrive func, Target_e kind);

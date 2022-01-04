@@ -468,6 +468,16 @@
               <FilePath>applications\Can\drv_canthread.c</FilePath>
             </File>
             <File>
+              <FileName>adjust_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Canister\adjust_sample.c</FilePath>
+            </File>
+            <File>
+              <FileName>callback_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Canister\callback_sample.c</FilePath>
+            </File>
+            <File>
               <FileName>canister.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\Canister\canister.c</FilePath>

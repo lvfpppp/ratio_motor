@@ -41,6 +41,15 @@ static void Target_Init(Target_t *point, Target_e kind)
 
 void Target_Set_Pos(float pos, Target_e kind)
 {
+    /* 角度补偿设定值 */
+    pos += canister.pos_min;
+
+    /* 输入限幅 */
+    if (pos >= canister.pos_max)
+        pos = canister.pos_max;
+    else if (pos <= canister.pos_min)
+        pos = canister.pos_min;
+
     target_point[kind].pos = pos;
 }
 
@@ -136,6 +145,8 @@ void Canister_Refresh_Motor(struct rt_can_msg *msg)
 /* 正方向为电机输出轴的逆时针方向 */
 void Canister_Set_Position(float angle)
 {
+    Target_Set_Pos(angle,MOTOR_SET);
+    
     /* 角度补偿设定值 */
     angle += canister.pos_min;
 
@@ -146,8 +157,16 @@ void Canister_Set_Position(float angle)
         angle = canister.pos_min;
 
     Motor_Write_SetAngle_ABS(&M3508,angle);
+}
 
-    Target_Set_Pos(angle,MOTOR_SET);
+float Canister_Get_NowPos(void)
+{
+    float angle = Motor_Read_NowAngle(&M3508);
+
+    /* 角度补偿设定值 */
+    angle -= canister.pos_min;
+
+    return angle;
 }
 
 void Canister_Set_MaxSpeed(float out_limit)
