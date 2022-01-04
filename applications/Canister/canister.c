@@ -53,7 +53,7 @@ void Target_Set_Pos(float pos, Target_e kind)
     target_point[kind].pos = pos;
 }
 
-void Register_Target_Callback(Func_Arrive func, Target_e kind)
+void Register_Target_Callback(Func_Arrive_p func, Target_e kind)
 {
     target_point[kind].arrive_cb = func;
 }
@@ -159,7 +159,7 @@ void Canister_Set_Position(float angle)
     Motor_Write_SetAngle_ABS(&M3508,angle);
 }
 
-float Canister_Get_NowPos(void)
+float Canister_Read_NowPos(void)
 {
     float angle = Motor_Read_NowAngle(&M3508);
 
@@ -179,6 +179,12 @@ void Canister_Set_MaxCurrent(float out_limit)
 {
     M3508.spe.out_limit_up = out_limit;
     M3508.spe.out_limit_down = - out_limit;
+}
+
+/* 调试pid用 */
+const Motor_t* Canister_Read_MotorData(void)
+{
+    return &M3508;
 }
 
 static float Cansiter_Adjust_Pos(float speed_run)
