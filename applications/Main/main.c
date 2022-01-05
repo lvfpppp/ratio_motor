@@ -5,12 +5,14 @@
 // #define EN_CALLBACK_TEST
 // #define EN_ADJUST_TEST
 // #define EN_PID_DEBUG
-#define EN_UART_CMD
+// #define EN_UART_CMD
+#define EN_ALL_FUN
 
 extern int callback_main(void);
 extern int adjust_main(void);
 extern int pid_main(void);
 extern int cmd_main(void);
+extern int all_fun_main(void);
 
 
 #define CAN_RS_PIN     GET_PIN(A,15)
@@ -31,7 +33,7 @@ void Board_Base_Init(void)
     Canister_Init();
 }
 
-
+//TODO:分析所有线程的优先级,校准时间过长,打印和停止
 int main(void)
 {
 #if defined(EN_CALLBACK_TEST)
@@ -42,5 +44,7 @@ int main(void)
     pid_main();
 #elif defined(EN_UART_CMD)
     cmd_main();
+#elif defined(EN_ALL_FUN)
+    all_fun_main();
 #endif
 }

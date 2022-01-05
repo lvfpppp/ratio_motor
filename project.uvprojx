@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F103xB, USE_HAL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.;..\..\..\include;applications\Can;applications\Canister;applications\Main;applications\Motor;applications\Pid;applications\Usart;board;board\CubeMX_Config\Inc;..\libraries\HAL_Drivers;..\libraries\HAL_Drivers\config;..\..\..\libcpu\arm\common;..\..\..\libcpu\arm\cortex-m3;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\finsh;..\..\..\components\libc\compilers\common;..\libraries\STM32F1xx_HAL\CMSIS\Device\ST\STM32F1xx\Include;..\libraries\STM32F1xx_HAL\STM32F1xx_HAL_Driver\Inc;..\libraries\STM32F1xx_HAL\CMSIS\Include</IncludePath>
+              <IncludePath>.;..\..\..\include;applications\Can;applications\Canister;applications\Main;applications\Motor;applications\Pid;applications\Usart;applications\Sample;board;board\CubeMX_Config\Inc;..\libraries\HAL_Drivers;..\libraries\HAL_Drivers\config;..\..\..\libcpu\arm\common;..\..\..\libcpu\arm\cortex-m3;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\finsh;..\..\..\components\libc\compilers\common;..\libraries\STM32F1xx_HAL\CMSIS\Device\ST\STM32F1xx\Include;..\libraries\STM32F1xx_HAL\STM32F1xx_HAL_Driver\Inc;..\libraries\STM32F1xx_HAL\CMSIS\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -473,24 +473,9 @@
               <FilePath>applications\Canister\canister.c</FilePath>
             </File>
             <File>
-              <FileName>PID_sample.c</FileName>
+              <FileName>patrol.c</FileName>
               <FileType>1</FileType>
-              <FilePath>applications\Main\PID_sample.c</FilePath>
-            </File>
-            <File>
-              <FileName>adjust_sample.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Main\adjust_sample.c</FilePath>
-            </File>
-            <File>
-              <FileName>callback_sample.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Main\callback_sample.c</FilePath>
-            </File>
-            <File>
-              <FileName>cmd_sample.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Main\cmd_sample.c</FilePath>
+              <FilePath>applications\Canister\patrol.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -511,6 +496,41 @@
               <FileName>myUart.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\Usart\myUart.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_agree.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Usart\uart_agree.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Sample</GroupName>
+          <Files>
+            <File>
+              <FileName>PID_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Sample\PID_sample.c</FilePath>
+            </File>
+            <File>
+              <FileName>adjust_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Sample\adjust_sample.c</FilePath>
+            </File>
+            <File>
+              <FileName>all_fun_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Sample\all_fun_sample.c</FilePath>
+            </File>
+            <File>
+              <FileName>callback_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Sample\callback_sample.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmd_sample.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\Sample\cmd_sample.c</FilePath>
             </File>
           </Files>
         </Group>

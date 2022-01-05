@@ -1,7 +1,5 @@
 #ifndef __CANISTER_H__
 #define __CANISTER_H__
-#include <rtthread.h>
-#include <rtdevice.h>
 #include "drv_motor.h"
 
 #define CANISTER_MAX_3508RPM    (469.0f)
@@ -19,8 +17,8 @@
 
 typedef enum
 {
-    PATROL_START = 0,
-    PATROL_END = 1,
+    PATROL_POS_START = 0,
+    PATROL_POS_END = 1,
     MOTOR_SET = 2,
     
     TARGET_NUM,
@@ -51,6 +49,8 @@ typedef struct
 rt_err_t Canister_Init(void);
 void Canister_Refresh_Motor(struct rt_can_msg *msg);
 void Canister_Set_Position(float angle);
+void Canister_Set_MaxSpeed(float out_limit);
+void Canister_Set_MaxCurrent(float out_limit);
 float Canister_Read_NowPos(void);
 const Motor_t* Canister_Read_MotorData(void);
 

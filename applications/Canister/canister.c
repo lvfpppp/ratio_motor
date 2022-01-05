@@ -3,15 +3,15 @@
 #include "drv_canthread.h"
 #include <math.h>
 
-Motor_t M3508;
-Target_t target_point[TARGET_NUM];
-rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
-rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准
+static Motor_t M3508;
+static Target_t target_point[TARGET_NUM];//改变设置初值方式,TODO:
+static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
+static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准
 
-Adjust_t canister = {
+static Adjust_t canister_adjust = {
     .pos_max = DEFAULT_POS_MAX,
     .pos_min = DEFAULT_POS_MIN,
-    .range = 0,
+    .range = 0,//TODO:
     .adjust_complete = RT_NULL,
 };
 
@@ -42,13 +42,13 @@ static void Target_Init(Target_t *point, Target_e kind)
 void Target_Set_Pos(float pos, Target_e kind)
 {
     /* 角度补偿设定值 */
-    pos += canister.pos_min;
+    pos += canister_adjust.pos_min;
 
     /* 输入限幅 */
-    if (pos >= canister.pos_max)
-        pos = canister.pos_max;
-    else if (pos <= canister.pos_min)
-        pos = canister.pos_min;
+    if (pos >= canister_adjust.pos_max)
+        pos = canister_adjust.pos_max;
+    else if (pos <= canister_adjust.pos_min)
+        pos = canister_adjust.pos_min;
 
     target_point[kind].pos = pos;
 }
@@ -107,8 +107,8 @@ rt_err_t Canister_Init(void)
     rt_err_t res;
     rt_thread_t thread = RT_NULL;
     
-    Target_Init(&target_point[PATROL_START],PATROL_START);
-    Target_Init(&target_point[PATROL_END],PATROL_END);
+    Target_Init(&target_point[PATROL_POS_START],PATROL_POS_START);
+    Target_Init(&target_point[PATROL_POS_END],PATROL_POS_END);
     Target_Init(&target_point[MOTOR_SET],MOTOR_SET);
     Canister_Motor_Init();
 
@@ -148,13 +148,13 @@ void Canister_Set_Position(float angle)
     Target_Set_Pos(angle,MOTOR_SET);
     
     /* 角度补偿设定值 */
-    angle += canister.pos_min;
+    angle += canister_adjust.pos_min;
 
     /* 输入限幅 */
-    if (angle >= canister.pos_max)
-        angle = canister.pos_max;
-    else if (angle <= canister.pos_min)
-        angle = canister.pos_min;
+    if (angle >= canister_adjust.pos_max)
+        angle = canister_adjust.pos_max;
+    else if (angle <= canister_adjust.pos_min)
+        angle = canister_adjust.pos_min;
 
     Motor_Write_SetAngle_ABS(&M3508,angle);
 }
@@ -164,19 +164,21 @@ float Canister_Read_NowPos(void)
     float angle = Motor_Read_NowAngle(&M3508);
 
     /* 角度补偿设定值 */
-    angle -= canister.pos_min;
+    angle -= canister_adjust.pos_min;
 
     return angle;
 }
 
 void Canister_Set_MaxSpeed(float out_limit)
 {
+    out_limit = fabs(out_limit);
     M3508.ang.out_limit_up = out_limit;
     M3508.ang.out_limit_down = - out_limit;
 }
 
 void Canister_Set_MaxCurrent(float out_limit)
 {
+    out_limit = fabs(out_limit);
     M3508.spe.out_limit_up = out_limit;
     M3508.spe.out_limit_down = - out_limit;
 }
@@ -226,15 +228,15 @@ static void Adjust_Thread(void *parameter)
     {
         if (en_pos_adjust == 1)
         {
-            canister.pos_min = Cansiter_Adjust_Pos(-ADJUST_SPEED_RUN);
-            canister.pos_max = Cansiter_Adjust_Pos(ADJUST_SPEED_RUN);
-            canister.range = canister.pos_max - canister.pos_min;
+            canister_adjust.pos_min = Cansiter_Adjust_Pos(-ADJUST_SPEED_RUN);
+            canister_adjust.pos_max = Cansiter_Adjust_Pos(ADJUST_SPEED_RUN);
+            canister_adjust.range = canister_adjust.pos_max - canister_adjust.pos_min;
             
             en_angle_loop = 1;  //开启角度闭环
             en_pos_adjust = 0;  //校准完毕
 
-            if (canister.adjust_complete != RT_NULL)
-                (*canister.adjust_complete)(canister.range);
+            if (canister_adjust.adjust_complete != RT_NULL)
+                (*canister_adjust.adjust_complete)(canister_adjust.range);
         }
         rt_thread_mdelay(1);
     }
@@ -242,10 +244,8 @@ static void Adjust_Thread(void *parameter)
 
 rt_err_t Canister_Adjust_Init(void)
 {
-    rt_thread_t thread = RT_NULL;
-
     //初始化线程
-    thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,15,10);
+    rt_thread_t thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,15,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 
@@ -268,5 +268,5 @@ rt_uint8_t Canister_Get_Adjust_State(void)
 
 void Register_Adjust_Callback(void (*func)(float))
 {
-    canister.adjust_complete = func;
+    canister_adjust.adjust_complete = func;
 }

@@ -5,8 +5,7 @@
 
 extern void Board_Base_Init(void);
 
-#define CAN_RS_PIN     GET_PIN(A,15)
-const rt_uint8_t vofa_tail[4] = {0x00, 0x00, 0x80, 0x7f};
+static const rt_uint8_t vofa_tail[4] = {0x00, 0x00, 0x80, 0x7f};
 
 /* 通过VOFA+上位机显示波形。然后在debug时，
 修改 en_angle_loop 值来切换速度闭环和角度闭环。

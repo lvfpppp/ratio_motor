@@ -3,9 +3,7 @@
 
 extern void Board_Base_Init(void);
 
-#define CAN_RS_PIN     GET_PIN(A,15)
-
-void Adjust_Complete_Callback(float range)
+static void Adjust_Complete_Callback(float range)
 {
     char txt[10];
     sprintf(txt,"%3.3f",range);
@@ -14,8 +12,8 @@ void Adjust_Complete_Callback(float range)
     rt_kprintf("max angle: %s\n",txt);
 }
 
-float test_angle = 0;
-void Test_Adjust(void)
+static float test_angle = 0;
+static void Test_Adjust(void)
 {
     Register_Adjust_Callback(Adjust_Complete_Callback);
 

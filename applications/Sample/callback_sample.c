@@ -3,30 +3,28 @@
 
 extern void Board_Base_Init(void);
 
-#define CAN_RS_PIN     GET_PIN(A,15)
-
 #define P_START_POS    0    //单位度
 #define P_END_POS      45   //单位度
 
-Target_e now_pos;
+static Target_e now_pos;
 
 /* 到达设定值的回调函数 */
-void Patrol_Callback(Motor_t const *motor,Target_e kind)
+static void Patrol_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
     sprintf(txt,"%3.3f",Canister_Read_NowPos());
     
-    if (kind == PATROL_START)
+    if (kind == PATROL_POS_START)
         rt_kprintf("Patrol Start: %s\n",txt);
-    else if (kind == PATROL_END)
+    else if (kind == PATROL_POS_END)
         rt_kprintf("Patrol End  : %s\n",txt);
 
     now_pos = kind;
 }
 
 /* 电机pid的角度pid达到设定值附近时,反馈数据 */
-void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
+static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
@@ -37,23 +35,23 @@ void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 /* 能实现电机的巡逻功能,并在到达目标点时,反馈数据 */
 void Test_Canister(void)
 {
-    Target_Set_Pos(P_START_POS,PATROL_START);
-    Register_Target_Callback(Patrol_Callback,PATROL_START);
+    Target_Set_Pos(P_START_POS,PATROL_POS_START);
+    Register_Target_Callback(Patrol_Callback,PATROL_POS_START);
 
-    Target_Set_Pos(P_END_POS,PATROL_END);
-    Register_Target_Callback(Patrol_Callback,PATROL_END);
+    Target_Set_Pos(P_END_POS,PATROL_POS_END);
+    Register_Target_Callback(Patrol_Callback,PATROL_POS_END);
 
-    Target_Set_Precision(1,MOTOR_SET);
+    Target_Set_Precision(1,MOTOR_SET);//修改辨识到达目标精度为 1度
     Register_Target_Callback(PID_Arrive_Callback,MOTOR_SET);
 
     while(1)
     {
-        if (now_pos == PATROL_START)
+        if (now_pos == PATROL_POS_START)
         {
             Canister_Set_Position(P_END_POS);
             rt_thread_mdelay(2000);
         }
-        else if(now_pos == PATROL_END)
+        else if(now_pos == PATROL_POS_END)
         {
             Canister_Set_Position(P_START_POS);
             rt_thread_mdelay(2000);

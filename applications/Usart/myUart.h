@@ -1,8 +1,11 @@
 #ifndef __MYUART_H__
 #define __MYUART_H__
 #include <rtthread.h>
+#include <stdio.h>
 
 #define MY_USE_UART "uart2"
+
+extern char printf_txt[50];
 
 /* 串口驱动信息 */
 struct Uart_Msg

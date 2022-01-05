@@ -1,13 +1,14 @@
 #include "myUart.h"
 
-struct rt_messagequeue my_uart_mq;
-rt_uint8_t msg_pool[256];
-rt_device_t MyUart_Serial;
-//TODO:全部加上static
+static struct rt_messagequeue my_uart_mq;
+static rt_uint8_t msg_pool[256];
+static rt_device_t MyUart_Serial;
 
-const rt_uint8_t cmd_length = sizeof(Canister_Cmd_t);
-Func_Uart_Recv recv_process_p = RT_NULL;
+static Func_Uart_Recv recv_process_p = RT_NULL;
+static union uart_cmd my_agree;
 
+char printf_txt[50];//注意: 不能在回调里使用MyUart_Send发送局部变量的值。会发送错误，显示乱码。
+//TODO:加锁保护,测试能否直接发送字符常量,估计不行
 
 static rt_err_t MyUart_Callback(rt_device_t dev, rt_size_t size)
 {
@@ -29,7 +30,6 @@ static void MyUart_Process_thread(void *parameter)
 {
 	struct Uart_Msg msg;
 	rt_err_t result;
-    union uart_cmd canister_u;
 
 	while (1)
 	{
@@ -38,9 +38,9 @@ static void MyUart_Process_thread(void *parameter)
 				
         if (result == RT_EOK)
         {
-            rt_device_read(msg.dev, 0, canister_u.buff, msg.size);
+            rt_device_read(msg.dev, 0, my_agree.buff, msg.size);
             if (recv_process_p != RT_NULL)
-                (*recv_process_p)(&canister_u.cmd);
+                (*recv_process_p)(&my_agree.cmd);
         }
     }
 }

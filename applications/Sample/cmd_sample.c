@@ -3,12 +3,12 @@
 
 extern void Board_Base_Init(void);
 
-const rt_uint16_t agree_head = 0xABAA;
-const rt_uint16_t agree_tail = 0x55CD;
+static const rt_uint16_t agree_head = 0xABAA;
+static const rt_uint16_t agree_tail = 0x55CD;
 
-char feedback_txt[50];
+static char feedback_txt[50];
 
-void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
+static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
 {
     if (recv_cmd_p->head == agree_head && recv_cmd_p->tail == agree_tail)
     {
@@ -50,6 +50,13 @@ void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
 
 /*
 (需要取消设置串口2为控制台串口)
+使用 vofa 的 RawData协议引擎，
+十六进制发送：AA AB 01 00 00 00 36 C2 00 00 B4 42 CD 55 00 00
+CMD 1: set pos -45.500
+修改第三个字节 01 为 02~4 得到的输出如下,
+CMD 2: min -45.500, max 90.000
+CMD 3: Now start calibrating the motor.
+CMD 4: I  -45.5, V   90.0
 */
 int cmd_main(void)
 {
