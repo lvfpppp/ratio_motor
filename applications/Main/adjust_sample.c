@@ -1,7 +1,7 @@
-#include "drv_canthread.h"
-#include <board.h>
 #include "canister.h"
 #include <stdio.h>
+
+extern void Board_Base_Init(void);
 
 #define CAN_RS_PIN     GET_PIN(A,15)
 
@@ -35,19 +35,12 @@ void Test_Adjust(void)
     然后在堵转后（依据掉速来判断），切换旋转方向。 
     然后遇到最大位置边界，便会停止到边界的最小值上。
     在校准完后，通过在debug窗口修改test_angle变量值，
-    则可以测试角度闭环（基于校准好后的角度）*/
+    则可以测试角度闭环（基于校准好后的角度）
+    (rt_kprintf函数需要设置串口2为控制台串口)
+*/
 int adjust_main(void)
 {
-	rt_err_t res = RT_EOK;
-
-    /* can硬件电路要求,can_rs引脚拉低 */
-    rt_pin_mode(CAN_RS_PIN, PIN_MODE_OUTPUT_OD);
-    rt_pin_write(CAN_RS_PIN, PIN_LOW);
-
-	res = Can1_Init();
-    RT_ASSERT(res == RT_EOK);
-
-    Canister_Init();
+    Board_Base_Init();
 
     Test_Adjust();
 

@@ -1,8 +1,7 @@
-#include "drv_canthread.h"
-#include <board.h>
 #include "canister.h"
 #include <stdio.h>
 
+extern void Board_Base_Init(void);
 
 #define CAN_RS_PIN     GET_PIN(A,15)
 
@@ -65,19 +64,12 @@ void Test_Canister(void)
 }
 
 /* 根据 P_START_POS 和 P_END_POS 设定的起点和终点角度值，来回巡逻。
-    在到达起点和终点后，会进入相应的回调函数*/
+    在到达起点和终点后，会进入相应的回调函数
+    (rt_kprintf函数需要设置串口2为控制台串口)
+*/
 int callback_main(void)
 {
-	rt_err_t res = RT_EOK;
-
-    /* can硬件电路要求,can_rs引脚拉低 */
-    rt_pin_mode(CAN_RS_PIN, PIN_MODE_OUTPUT_OD);
-    rt_pin_write(CAN_RS_PIN, PIN_LOW);
-
-	res = Can1_Init();
-    RT_ASSERT(res == RT_EOK);
-
-    Canister_Init();
+    Board_Base_Init();
 
 	Test_Canister();
 

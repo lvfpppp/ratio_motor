@@ -53,7 +53,7 @@ void Target_Set_Pos(float pos, Target_e kind)
     target_point[kind].pos = pos;
 }
 
-void Register_Target_Callback(Func_Arrive_p func, Target_e kind)
+void Register_Target_Callback(Func_Arrive func, Target_e kind)
 {
     target_point[kind].arrive_cb = func;
 }

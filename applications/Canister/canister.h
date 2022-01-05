@@ -26,7 +26,7 @@ typedef enum
     TARGET_NUM,
 } Target_e;
 
-typedef void (*Func_Arrive_p)(Motor_t const *,Target_e) ;
+typedef void (*Func_Arrive)(Motor_t const *,Target_e) ;
 typedef struct
 {
     Target_e kind;
@@ -34,7 +34,7 @@ typedef struct
     rt_uint8_t flag;    //用于触发一次回调
 
     float err_precision;      //角度误差精度
-    Func_Arrive_p arrive_cb;
+    Func_Arrive arrive_cb;
 
 } Target_t;
 
@@ -55,7 +55,7 @@ float Canister_Read_NowPos(void);
 const Motor_t* Canister_Read_MotorData(void);
 
 void Target_Set_Pos(float pos, Target_e kind);
-void Register_Target_Callback(Func_Arrive_p func, Target_e kind);
+void Register_Target_Callback(Func_Arrive func, Target_e kind);
 void Target_Set_Precision(float precision, Target_e kind);
 
 void Canister_Adjust_Start(void);

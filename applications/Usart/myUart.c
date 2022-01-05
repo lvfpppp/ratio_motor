@@ -1,9 +1,13 @@
 #include "myUart.h"
+
 struct rt_messagequeue my_uart_mq;
 rt_uint8_t msg_pool[256];
-rt_uint8_t my_uart_buffer[RT_SERIAL_RB_BUFSZ + 1];
 rt_device_t MyUart_Serial;
 //TODO:全部加上static
+
+const rt_uint8_t cmd_length = sizeof(Canister_Cmd_t);
+Func_Uart_Recv recv_process_p = RT_NULL;
+
 
 static rt_err_t MyUart_Callback(rt_device_t dev, rt_size_t size)
 {
@@ -25,6 +29,7 @@ static void MyUart_Process_thread(void *parameter)
 {
 	struct Uart_Msg msg;
 	rt_err_t result;
+    union uart_cmd canister_u;
 
 	while (1)
 	{
@@ -33,8 +38,9 @@ static void MyUart_Process_thread(void *parameter)
 				
         if (result == RT_EOK)
         {
-            rt_device_read(msg.dev, 0, my_uart_buffer, msg.size);
-            //处理一帧数据,写个回调把buff常量指针作为形参
+            rt_device_read(msg.dev, 0, canister_u.buff, msg.size);
+            if (recv_process_p != RT_NULL)
+                (*recv_process_p)(&canister_u.cmd);
         }
     }
 }
@@ -71,7 +77,7 @@ rt_err_t MyUart_Init(void)
 		return res;
 
     rt_thread_t MyUart_Thread = rt_thread_create("MyUart_Thread", MyUart_Process_thread, 
-												RT_NULL, 512, 7, 10);
+												RT_NULL, 1024, 7, 10);
     if (MyUart_Thread != RT_NULL)
     {
         rt_thread_startup(MyUart_Thread);
@@ -88,4 +94,9 @@ rt_err_t MyUart_Init(void)
 void MyUart_Send(const void *buffer,rt_size_t size)
 {
     rt_device_write(MyUart_Serial,0,buffer,size);
+}
+
+void Register_MyUart_Recv_Callback(Func_Uart_Recv func)
+{
+    recv_process_p = func;
 }
