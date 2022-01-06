@@ -13,7 +13,7 @@ static void Patrol_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
-    sprintf(txt,"%3.3f",Canister_Read_NowPos());
+    sprintf(txt,"%03.3f",Canister_Read_NowPos());
     
     if (kind == PATROL_POS_START)
         rt_kprintf("Patrol Start: %s\n",txt);
@@ -28,7 +28,7 @@ static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
-    sprintf(txt,"%3.3f",Canister_Read_NowPos());
+    sprintf(txt,"%03.3f",Canister_Read_NowPos());
     rt_kprintf("PID: %s\n",txt);
 }
 

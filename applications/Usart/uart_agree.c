@@ -7,31 +7,65 @@ static const rt_uint16_t agree_head = 0xABAA;
 static const rt_uint16_t agree_tail = 0x55CD;
 
 
+static void List_All_Command(void)
+{
+    MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
+    MyUart_Send_PrintfString("|           head        |   cmd  | data1 |");   MyUart_Send_PrintfString(" data2 |            tail          |\n");
+    MyUart_Send_PrintfString("|------------------- +-------+-------+");   MyUart_Send_PrintfString("-------+------------------- |\n");
+    sprintf(Get_PrintfTxt(),"| 0x%02X ",agree_head); 
+    MyUart_Send_PrintfTxt();
+    sprintf(Get_PrintfTxt(),"(uint16)  (uint8) | (float) | (float) "); 
+    MyUart_Send_PrintfTxt();
+    sprintf(Get_PrintfTxt(),"| 0x%02X (uint16) |\n",agree_tail); 
+    MyUart_Send_PrintfTxt();
+    MyUart_Send_PrintfString("|-----------------------------------------");   MyUart_Send_PrintfString("--------------------------|\n");
+    MyUart_Send_PrintfString("| $ cmd1: Set the position of the Angle loop.");MyUart_Send_PrintfString("                       |\n");
+    MyUart_Send_PrintfString("| $ cmd2: Set up two positions for patrol.");   MyUart_Send_PrintfString("                            |\n");
+    MyUart_Send_PrintfString("| $ cmd3: Start the calibration function.");    MyUart_Send_PrintfString("                               |\n");
+    MyUart_Send_PrintfString("| $ cmd4: Set the max current and max speed."); MyUart_Send_PrintfString("                    |\n");
+    MyUart_Send_PrintfString("| $ cmd5: Start patrol function.");             MyUart_Send_PrintfString("                                            |\n");
+    MyUart_Send_PrintfString("| $ cmd6: End patrol function.");               MyUart_Send_PrintfString("                                              |\n");
+    MyUart_Send_PrintfString("| $ cmd7: Printing Help Information.");         MyUart_Send_PrintfString("                                    |\n");
+    MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
+}
+
 static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
 {
+    RT_ASSERT(recv_cmd_p != RT_NULL);
+
     if (recv_cmd_p->head == agree_head && recv_cmd_p->tail == agree_tail)
     {
         switch (recv_cmd_p->cmd)
         {
         case 1:
             //设置角度闭环到一个位置
-            sprintf(Get_PrintfTxt(),"CMD 1: set pos %3.3f\n\n",recv_cmd_p->data1);
+            sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %03.3f\n\n",recv_cmd_p->data1);
             MyUart_Send_PrintfTxt();
             
             Canister_Set_Position(recv_cmd_p->data1);
             break;
 
         case 2:
-            //设置巡逻角度
-            sprintf(Get_PrintfTxt(),"CMD 2: min %3.3f, max %3.3f\n\n",recv_cmd_p->data1,recv_cmd_p->data2);
-            MyUart_Send_PrintfTxt();
-            
-            Patrol_Set_Pos(recv_cmd_p->data1,recv_cmd_p->data2);
+			{
+                //设置巡逻角度
+                float p_start = recv_cmd_p->data1;
+                float p_end = recv_cmd_p->data2;
+
+                // 输入限幅
+                float canister_max = Canister_Read_Pos_Range();
+                VALUE_CLAMP(p_start,0,canister_max);
+                VALUE_CLAMP(p_end,0,canister_max);
+
+                sprintf(Get_PrintfTxt(),"[CMD 2]: start %03.3f, end %03.3f\n\n",p_start,p_end);
+                MyUart_Send_PrintfTxt();
+
+                Patrol_Set_Pos(p_start,p_end);
+            }
             break;
 
         case 3:
             //开始校准,阻塞至校准完,TODO:加个校准超时停止和打印
-            MyUart_Send_PrintfString("CMD 3: Now start calibrating the motor.\n\n");
+            MyUart_Send_PrintfString("[CMD 3]: Now start calibrating the motor.\n\n");
 
             Canister_Adjust_Start();
             //等待校准完毕
@@ -39,14 +73,14 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
                 rt_thread_mdelay(1);
             }
             if (Canister_Get_Adjust_State() == 0)
-                MyUart_Send_PrintfString("CMD 3: successfully finished calibrating the motor.\n\n");
+                MyUart_Send_PrintfString("[CMD 3]: successfully finished calibrating the motor.\n\n");
             else
-                MyUart_Send_PrintfString("CMD 3: Fail to finish calibrating the motor.\n\n");
+                MyUart_Send_PrintfString("[CMD 3]: Fail to finish calibrating the motor.\n\n");
             break;
 
         case 4:
-            //设置最大电流和最大速度。
-            sprintf(Get_PrintfTxt(),"CMD 4: I %6.1f, V %6.1f\n\n",recv_cmd_p->data1,recv_cmd_p->data2);
+            //设置最大电流和最大速度
+            sprintf(Get_PrintfTxt(),"[CMD 4]: I %6.1f, V %6.1f\n\n",recv_cmd_p->data1,recv_cmd_p->data2);
             MyUart_Send_PrintfTxt();
 
             Canister_Set_MaxCurrent(recv_cmd_p->data1);
@@ -55,19 +89,24 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
 
         case 5:
             //开始巡逻
-            MyUart_Send_PrintfString("CMD 5: Start patrol.\n\n");
+            MyUart_Send_PrintfString("[CMD 5]: Start patrol.\n\n");
             Patrol_Fun_Open();
             break;
         
         case 6:
             //停止巡逻
-            MyUart_Send_PrintfString("CMD 6: Finish patrol.\n\n");
+            MyUart_Send_PrintfString("[CMD 6]: Finish patrol.\n\n");
             Patrol_Fun_Close();
             break;
 
+        case 7:
+            List_All_Command();
+            //打印所有指令信息
+
+            break;
         default:
             //无该指令
-            MyUart_Send_PrintfString("Wrong command.\n\n");
+            MyUart_Send_PrintfString("[Wrong command.]\n\n");
             break;
         }
     }

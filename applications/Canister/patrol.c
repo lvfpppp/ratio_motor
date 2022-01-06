@@ -17,26 +17,31 @@ static void Patrol_State_Transfer(enum patrol_state_e next)
 /* 到达设定值的回调函数 */
 static void Patrol_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
+    RT_ASSERT(motor != RT_NULL);
+
     if (patrol.now_state != PATROL_IDLE && patrol.now_state != PATROL_CLOSE)
     {
         /* 输出到达设定值的当前角度值 */
         if (kind == PATROL_POS_START)
         {
-            sprintf(Get_PrintfTxt(),"patrol: in start: %3.3f (angle)\n",Canister_Read_NowPos());
+            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %03.3f (angle)} ",Canister_Read_NowPos());
             MyUart_Send_PrintfTxt();
-            MyUart_Send_PrintfString("------------------------>>>\n");
+            MyUart_Send_PrintfString("========>>>>\n");
         }
         else if (kind == PATROL_POS_END)
         {
-            sprintf(Get_PrintfTxt(),"patrol: in end  : %3.3f (angle)\n",Canister_Read_NowPos());
+            MyUart_Send_PrintfString("\n<<<<========");
+            sprintf(Get_PrintfTxt()," {patrol: in end  : %03.3f (angle)} ===[\n",Canister_Read_NowPos());
             MyUart_Send_PrintfTxt();
-            MyUart_Send_PrintfString("<<<------------------------\n");
         }
-
 
         /* 到达目标点后迁入暂停态 */
         patrol.now_endpoint = kind;
         Patrol_State_Transfer(PATROL_PAUSE);
+    }
+    else
+    {
+        patrol.now_endpoint = kind;//没在工作时,记录位置
     }
 }
 
@@ -126,6 +131,11 @@ void Patrol_Fun_Open(void)
 
 void Patrol_Set_Pos(float start,float end)
 {
+    /* 输入限幅 */
+    float canister_max = Canister_Read_Pos_Range();
+    VALUE_CLAMP(start,0,canister_max);
+    VALUE_CLAMP(end,0,canister_max);
+
     patrol.start_pos = start;
     patrol.end_pos = end;
 

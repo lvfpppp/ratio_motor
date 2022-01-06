@@ -5,7 +5,12 @@
 #include "myUart.h"
 
 static Motor_t M3508;
-static Target_t target_point[TARGET_NUM];//改变设置初值方式,TODO:
+static Target_t target_point[TARGET_NUM] = {
+    [0].kind = PATROL_POS_START , [0].err_precision = DEFAULT_ERR_PRECISION, [0].arrive_cb = RT_NULL,
+    [1].kind = PATROL_POS_END   , [1].err_precision = DEFAULT_ERR_PRECISION, [1].arrive_cb = RT_NULL,
+    [2].kind = MOTOR_SET        , [2].err_precision = DEFAULT_ERR_PRECISION, [2].arrive_cb = RT_NULL,
+};
+
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
 static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准,TODO:改名
 
@@ -17,6 +22,8 @@ static Adjust_t canister_adjust = {
 
 static void Target_Callback_Process(Target_t *aim)
 {
+    RT_ASSERT(aim != RT_NULL);
+
     /* 如果设定值到达 起始目标 附近, aim->flag 用作回调的单次触发 */
     if (fabs(Motor_Read_NowAngle(&M3508) - aim->pos) < aim->err_precision && aim->flag == 0)
     {
@@ -30,31 +37,24 @@ static void Target_Callback_Process(Target_t *aim)
     }
 }
 
-static void Target_Init(Target_t *point, Target_e kind)
-{
-    point->kind = kind;
-    point->pos = 0;
-    point->flag = 0;
-    point->err_precision = DEFAULT_ERR_PRECISION;
-    point->arrive_cb = RT_NULL;
-}
 
 void Target_Set_Pos(float pos, Target_e kind)
 {
+    /* 检查边界合理性 */
+    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+
     /* 角度补偿设定值 */
     pos += canister_adjust.pos_min;
 
     /* 输入限幅 */
-    if (pos >= canister_adjust.pos_max)
-        pos = canister_adjust.pos_max;
-    else if (pos <= canister_adjust.pos_min)
-        pos = canister_adjust.pos_min;
+    VALUE_CLAMP(pos,canister_adjust.pos_min,canister_adjust.pos_max);
 
     target_point[kind].pos = pos;
 }
 
 void Register_Target_Callback(Func_Arrive func, Target_e kind)
 {
+    RT_ASSERT(func != RT_NULL);
     target_point[kind].arrive_cb = func;
 }
 
@@ -94,7 +94,7 @@ static void Canister_Callback_Thread(void *parameter)
         if (en_angle_loop == 1)
         {
             for (int i = 0; i < TARGET_NUM; i++)
-            Target_Callback_Process(&target_point[i]);
+                Target_Callback_Process(&target_point[i]);
         }
         
         rt_thread_mdelay(1);
@@ -104,7 +104,7 @@ static void Canister_Callback_Thread(void *parameter)
 static void Canister_Motor_Init(void)
 {
     motor_init(&M3508,MOTOR_ID_1,CANISTER_MOTOR_RATIO,ANGLE_CTRL_FULL,8192,180,-180);//不选择ANGLE_CTRL_EXTRA,取消角度闭环的就近原则
-    pid_init(&M3508.ang,30,0,0,1000,CANISTER_MAX_3508RPM*CANISTER_MOTOR_RATIO,-CANISTER_MAX_3508RPM*CANISTER_MOTOR_RATIO);
+    pid_init(&M3508.ang,30,0,0,1000,CANISTER_MAX_SPEED, -CANISTER_MAX_SPEED);
     pid_init(&M3508.spe,15,0.05,10,1000,10000,-10000);
 
     /*等待电机第一次通信完毕*/
@@ -118,10 +118,7 @@ rt_err_t Canister_Init(void)
 {
     rt_err_t res;
     rt_thread_t thread = RT_NULL;
-    
-    Target_Init(&target_point[PATROL_POS_START],PATROL_POS_START);
-    Target_Init(&target_point[PATROL_POS_END],PATROL_POS_END);
-    Target_Init(&target_point[MOTOR_SET],MOTOR_SET);
+
     Canister_Motor_Init();
 
     //初始化信号量
@@ -158,6 +155,7 @@ rt_err_t Canister_Init(void)
 
 void Canister_Refresh_Motor(struct rt_can_msg *msg)
 {
+    RT_ASSERT(msg != RT_NULL);
     motor_readmsg(msg,&M3508.dji);
 }
 
@@ -165,16 +163,16 @@ void Canister_Refresh_Motor(struct rt_can_msg *msg)
 /* 正方向为电机输出轴的逆时针方向 */
 void Canister_Set_Position(float angle)
 {
+    /* 检查边界合理性 */
+    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+
     Target_Set_Pos(angle,MOTOR_SET);
     
     /* 角度补偿设定值 */
     angle += canister_adjust.pos_min;
 
     /* 输入限幅 */
-    if (angle >= canister_adjust.pos_max)
-        angle = canister_adjust.pos_max;
-    else if (angle <= canister_adjust.pos_min)
-        angle = canister_adjust.pos_min;
+    VALUE_CLAMP(angle,canister_adjust.pos_min,canister_adjust.pos_max);
 
     Motor_Write_SetAngle_ABS(&M3508,angle);
 }
@@ -189,9 +187,20 @@ float Canister_Read_NowPos(void)
     return angle;
 }
 
+float Canister_Read_Pos_Range(void)
+{
+    /* 检查边界合理性 */
+    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+
+    /* 角度补偿设定值 */
+    return canister_adjust.pos_max - canister_adjust.pos_min;
+}
+
 void Canister_Set_MaxSpeed(float out_limit)
 {
     out_limit = fabs(out_limit);
+    VALUE_CLAMP(out_limit,0,CANISTER_MAX_SPEED);
+
     M3508.ang.out_limit_up = out_limit;
     M3508.ang.out_limit_down = - out_limit;
 }
@@ -199,6 +208,8 @@ void Canister_Set_MaxSpeed(float out_limit)
 void Canister_Set_MaxCurrent(float out_limit)
 {
     out_limit = fabs(out_limit);
+    VALUE_CLAMP(out_limit,0,CANISTER_MAX_CURRENT);
+
     M3508.spe.out_limit_up = out_limit;
     M3508.spe.out_limit_down = - out_limit;
 }
@@ -279,6 +290,10 @@ static void Adjust_Thread(void *parameter)
             canister_adjust.pos_min = temp_pos;
 
             canister_adjust.pos_max = Cansiter_Adjust_Pos(ADJUST_SPEED_RUN);
+            //检查正负性
+            if (canister_adjust.pos_max < canister_adjust.pos_min)
+                en_pos_adjust = 2;
+
             if (en_pos_adjust == 2)
             {
                 canister_adjust.pos_max = DEFAULT_POS_MAX;
@@ -323,5 +338,6 @@ rt_uint8_t Canister_Get_Adjust_State(void)
 
 void Register_Adjust_Callback(void (*func)(float))
 {
+    RT_ASSERT(func != RT_NULL);
     canister_adjust.adjust_complete = func;
 }

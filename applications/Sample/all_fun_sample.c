@@ -11,9 +11,14 @@ extern void Board_Base_Init(void);
 /* 电机pid的角度pid达到设定值附近时,反馈数据 */
 static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
+    RT_ASSERT(motor != RT_NULL);
+    
     /* 输出到达设定值的当前角度值 */
-    sprintf(Get_PrintfTxt(),"|| PID steady state: %3.3f (angle) ||\n",Canister_Read_NowPos());
+    MyUart_Send_PrintfString("+------------------------------------+\n");
+    sprintf(Get_PrintfTxt(),"|  PID steady state: %03.3f (angle)  |\n",Canister_Read_NowPos());
     MyUart_Send_PrintfTxt();
+    MyUart_Send_PrintfString("+------------------------------------+\n");
+
 }
 
 static void Feedback_Part_Init(void)
@@ -26,12 +31,12 @@ static void Feedback_Part_Init(void)
 ////////////////////////////////////////////////////////////////////
 static void Adjust_Complete_Callback(float range)
 {
-    MyUart_Send_PrintfString("|-------------------------|\n");
-    MyUart_Send_PrintfString("|  motor adjust result  |\n");
-    MyUart_Send_PrintfString("|  min angle: 0\n");
-    sprintf(Get_PrintfTxt(), "|  max angle: %3.3f\n",range);
+    MyUart_Send_PrintfString("+-------------------------+\n");
+    MyUart_Send_PrintfString("|  motor adjust result    |\n");
+    MyUart_Send_PrintfString("|  min angle: 0              |\n");
+    sprintf(Get_PrintfTxt(), "|  max angle: %03.3f    |\n",range);
     MyUart_Send_PrintfTxt();
-    MyUart_Send_PrintfString("|-------------------------|\n\n");
+    MyUart_Send_PrintfString("+-------------------------+\n");
 }
 
 /* 上电默认校准,直至校准完毕 */
