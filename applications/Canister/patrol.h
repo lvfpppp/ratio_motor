@@ -8,10 +8,6 @@
 
 #define PATROL_PAUSE_TIME   (1000)       //单位ms,到达顶点后停顿时间
 
-// enum patrol_sta_e
-// {
-//     IDIE,
-// };
 
 enum patrol_state_e
 {

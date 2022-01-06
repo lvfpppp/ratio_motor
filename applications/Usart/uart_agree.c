@@ -32,11 +32,13 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
 
             Canister_Adjust_Start();
             //等待校准完毕
-            while(Canister_Get_Adjust_State()){
+            while(Canister_Get_Adjust_State() == 1){
                 rt_thread_mdelay(1);
             }
-
-            sprintf(printf_txt,"CMD 3: successfully finished calibrating the motor.\n");
+            if (Canister_Get_Adjust_State() == 0)
+                sprintf(printf_txt,"CMD 3: successfully finished calibrating the motor.\n");
+            else
+                sprintf(printf_txt,"CMD 3: Fail to finish calibrating the motor.\n");
             break;
 
         case 4:

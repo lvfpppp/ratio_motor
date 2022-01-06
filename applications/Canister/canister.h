@@ -14,6 +14,7 @@
 #define ADJUST_SPEED_RUN        (500)              //校准时的速度,单位小转子的rpm
 #define ADJUST_SPEED_STOP       (200)              //校准时的速度,单位小转子的rpm
 #define ADJUST_TIME             (300)              //校准判断时长,单位ms
+#define ADJUST_TIMEOUT          (((CANISTER_MOTOR_RATIO/ADJUST_SPEED_RUN)*60*1000)/2)    //校准超时判断时长,单位ms
 
 typedef enum
 {

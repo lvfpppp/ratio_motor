@@ -158,7 +158,7 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>M3508</ItemText>
+          <ItemText>M3508,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>

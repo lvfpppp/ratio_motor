@@ -49,12 +49,10 @@ static void Adjust_Part_Init(void)
     Canister_Adjust_Start();
 
     //等待校准完毕
-    while(Canister_Get_Adjust_State()){
+    while(Canister_Get_Adjust_State() != 0){
         rt_thread_mdelay(1);
     }
 
-    //停在当前的位置
-    Canister_Set_Position(Canister_Read_NowPos());
     // Canister_Set_Position(0);//停在0位
 }
 ////////////////////////////////////////////////////////////////////

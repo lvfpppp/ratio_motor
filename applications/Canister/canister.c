@@ -2,11 +2,12 @@
 #include "HCanID_data.h"
 #include "drv_canthread.h"
 #include <math.h>
+#include "myUart.h"
 
 static Motor_t M3508;
 static Target_t target_point[TARGET_NUM];//改变设置初值方式,TODO:
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
-static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准
+static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准,TODO:改名
 
 static Adjust_t canister_adjust = {
     .pos_max = DEFAULT_POS_MAX,
@@ -192,6 +193,7 @@ const Motor_t* Canister_Read_MotorData(void)
 static float Cansiter_Adjust_Pos(float speed_run)
 {
     static rt_int32_t _cnt = 0;
+    static rt_int32_t timeout_cnt = 0;
 
     en_angle_loop = 0;//开启速度闭环
 
@@ -208,6 +210,12 @@ static float Cansiter_Adjust_Pos(float speed_run)
             if (_cnt > ADJUST_TIME)
             {
                 _cnt = 0;
+                timeout_cnt = 0;
+
+                en_angle_loop = 1;  //开启角度闭环
+                Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
+                // Canister_Set_Position(Canister_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
+
                 return Motor_Read_NowAngle(&M3508);
             }
         }
@@ -217,6 +225,23 @@ static float Cansiter_Adjust_Pos(float speed_run)
             _cnt -= 10;
             if (_cnt < 0)
                 _cnt = 0;
+
+            /* 未出现掉速一段时间 */
+            timeout_cnt ++;
+            if (timeout_cnt > ADJUST_TIMEOUT)
+            {
+                _cnt = 0;
+                timeout_cnt = 0;
+                
+                en_angle_loop = 1;  //开启角度闭环
+                Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
+                // Canister_Set_Position(Canister_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
+
+                en_pos_adjust = 2;//异常
+                rt_strncpy(printf_txt,"Motor calibration timeout!\n",29);//TODO:检查29
+                MyUart_Send(printf_txt,rt_strlen(printf_txt));
+                return 0;
+            }
         }
         rt_thread_mdelay(1);
     }
@@ -224,20 +249,34 @@ static float Cansiter_Adjust_Pos(float speed_run)
 
 static void Adjust_Thread(void *parameter)
 {
+    float temp_pos; //保护pos_min
+
     while(1)
     {
         if (en_pos_adjust == 1)
         {
-            canister_adjust.pos_min = Cansiter_Adjust_Pos(-ADJUST_SPEED_RUN);
+            temp_pos = Cansiter_Adjust_Pos(-ADJUST_SPEED_RUN);
+            if (en_pos_adjust == 2)
+                goto _adjust_error;
+            canister_adjust.pos_min = temp_pos;
+
             canister_adjust.pos_max = Cansiter_Adjust_Pos(ADJUST_SPEED_RUN);
+            if (en_pos_adjust == 2)
+            {
+                canister_adjust.pos_max = DEFAULT_POS_MAX;
+                canister_adjust.pos_min = DEFAULT_POS_MIN;
+                goto _adjust_error;
+            }
+
             canister_adjust.range = canister_adjust.pos_max - canister_adjust.pos_min;
             
-            en_angle_loop = 1;  //开启角度闭环
             en_pos_adjust = 0;  //校准完毕
 
             if (canister_adjust.adjust_complete != RT_NULL)
                 (*canister_adjust.adjust_complete)(canister_adjust.range);
         }
+
+    _adjust_error:
         rt_thread_mdelay(1);
     }
 }
@@ -260,7 +299,7 @@ void Canister_Adjust_Start(void)
     en_pos_adjust = 1;
 }
 
-//1为开启位置的校准,0为校准结束或者未开始校准
+//1为开启位置的校准,0为校准结束或者未开始校准,2是校准失败
 rt_uint8_t Canister_Get_Adjust_State(void)
 {
     return en_pos_adjust;
