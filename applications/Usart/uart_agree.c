@@ -41,10 +41,15 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
         {
         case 1:
             //设置角度闭环到一个位置
-            sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %06.3f\n",recv_cmd_p->data1);
-            MyUart_Send_PrintfTxt();
-            
-            Ratio_Motor_Set_Position(recv_cmd_p->data1);
+            if (Patrol_If_Finsh() == RT_TRUE)
+            {
+                sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %06.3f\n",recv_cmd_p->data1);
+                MyUart_Send_PrintfTxt();
+
+                Ratio_Motor_Set_Position(recv_cmd_p->data1);
+            }
+            else
+                MyUart_Send_PrintfString("[CMD 1]: Motor is occupied by Patrol function.\n");
             break;
 
         case 2:
@@ -104,7 +109,7 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 
         default:
             //无该指令
-            MyUart_Send_PrintfString("[Wrong command.]\n");
+            MyUart_Send_PrintfString("[CMD]: Wrong command.\n");
             break;
         }
     }

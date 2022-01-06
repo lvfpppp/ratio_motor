@@ -52,6 +52,7 @@ typedef struct
 typedef enum
 {
     ADJ_IDLE,
+    ADJ_IDLE_ERROR,
 
     ADJ_CLOCKWISE,
     ADJ_CLOCKWISE_RUNNING,

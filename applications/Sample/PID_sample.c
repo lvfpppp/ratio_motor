@@ -18,7 +18,7 @@ int pid_main(void)
     Board_Base_Init();
 
     float ch[4];
-    const Motor_t * debug_3508 = Ratio_Motor_Read_MotorData();//todo:将指针写为常量的形式,测试,推git
+    const Motor_t * debug_3508 = Ratio_Motor_Read_MotorData();
     
     while(1)
     {

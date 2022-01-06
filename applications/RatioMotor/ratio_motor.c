@@ -14,7 +14,7 @@ static Target_t target_point[TARGET_NUM] = {
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
 
 static Adjust_t RatioM_adjust = {
-    .state = ADJ_IDLE,
+    .state = ADJ_IDLE_ERROR,
     .cnt = 0,
     .timeout_cnt = 0,
     .pos_max = DEFAULT_POS_MAX,
@@ -179,6 +179,8 @@ void Ratio_Motor_Set_Position(float angle)
 
         Motor_Write_SetAngle_ABS(&M3508,angle);
     }
+    else
+        MyUart_Send_PrintfString("[Ratio Motor]: The motor is not properly calibrated.\n");
 }
 
 float Ratio_Motor_Read_NowPos(void)
@@ -316,6 +318,7 @@ static void RatioM_Adjust_Thread(void *parameter)
         switch (RatioM_adjust.state)
         {
         case ADJ_IDLE:
+        case ADJ_IDLE_ERROR:
             rt_thread_mdelay(1);
             break;
 
@@ -344,7 +347,7 @@ static void RatioM_Adjust_Thread(void *parameter)
         case ADJ_ERROR:
             RatioM_adjust.pos_max = DEFAULT_POS_MAX;
             RatioM_adjust.pos_min = DEFAULT_POS_MIN;
-            RatioM_adjust.state = ADJ_IDLE;
+            RatioM_adjust.state = ADJ_IDLE_ERROR;
             break;
         
         case ADJ_SUCCESS:
@@ -369,14 +372,16 @@ rt_err_t RatioM_Adjust_Init(void)
 
 void RatioM_Adjust_Start(void)
 {
-    if (RatioM_adjust.state == ADJ_IDLE)
+    if (RatioM_adjust.state == ADJ_IDLE || RatioM_adjust.state == ADJ_IDLE_ERROR)
     {
         MyUart_Send_PrintfString("[adjust]: Now start calibrating the motor.\n");
         RatioM_adjust.state = ADJ_CLOCKWISE;
     }
+    else
+        MyUart_Send_PrintfString("[adjust]: The calibration function is enabled.\n");
 }
 
-//RT_TRUE为校准完成或失败空闲,RT_FALSE为正在校准
+//RT_TRUE为校准完成,RT_FALSE为正在校准,校准失败,未开始校准
 rt_bool_t RatioM_Adjust_If_Finsh(void)
 {
     if (RatioM_adjust.state == ADJ_IDLE)

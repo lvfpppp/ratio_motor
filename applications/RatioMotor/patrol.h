@@ -34,5 +34,6 @@ rt_err_t Patrol_Init(void);
 void Patrol_Fun_Close(void);
 void Patrol_Fun_Open(void);
 void Patrol_Set_Pos(float start,float end);
+rt_bool_t Patrol_If_Finsh(void);
 
 #endif

@@ -120,15 +120,24 @@ rt_err_t Patrol_Init(void)
 //巡逻功能关闭
 void Patrol_Fun_Close(void)
 {
-    Patrol_State_Transfer(PATROL_CLOSE);
+    /* 只有在不是关闭和空闲态才能关闭 */
+    if (patrol.now_state != PATROL_CLOSE && patrol.now_state != PATROL_IDLE)
+        Patrol_State_Transfer(PATROL_CLOSE);
+    else
+        MyUart_Send_PrintfString("[patrol]: Patrol has been shut down.\n");
 }
 
 //巡逻功能打开
 void Patrol_Fun_Open(void)
 {
     //只有当校准完毕,才能开始巡逻
-    if (RatioM_Adjust_If_Finsh() == RT_TRUE)//TODO:打印
+    if (RatioM_Adjust_If_Finsh() == RT_TRUE)
+    {//检查,巡逻范围是否在校准的范围之内TODO:
+        MyUart_Send_PrintfString("[patrol]: ready ... ...\n");
         Patrol_Move_Opposite();
+    }
+    else
+        MyUart_Send_PrintfString("[patrol]: The motor is not properly calibrated successfully.\n");
 }
 
 void Patrol_Set_Pos(float start,float end)
@@ -143,4 +152,13 @@ void Patrol_Set_Pos(float start,float end)
 
     Target_Set_Pos(patrol.start_pos,PATROL_POS_START);
     Target_Set_Pos(patrol.end_pos,PATROL_POS_END);
+}
+
+//RT_TRUE为巡逻完成,RT_FALSE为正在巡逻
+rt_bool_t Patrol_If_Finsh(void)
+{
+    if (patrol.now_state == PATROL_IDLE)
+        return RT_TRUE;
+    else
+        return RT_FALSE;
 }
