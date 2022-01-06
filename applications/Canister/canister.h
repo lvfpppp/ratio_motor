@@ -41,7 +41,6 @@ typedef struct
 {
     float pos_min;
     float pos_max;
-    float range;
     void (*adjust_complete)(float);
 
 } Adjust_t;

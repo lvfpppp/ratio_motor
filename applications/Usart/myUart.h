@@ -5,7 +5,6 @@
 
 #define MY_USE_UART "uart2"
 
-extern char printf_txt[50];
 
 /* 串口驱动信息 */
 struct Uart_Msg
@@ -35,5 +34,8 @@ typedef void (*Func_Uart_Recv)(const Canister_Cmd_t *data);
 rt_err_t MyUart_Init(void);
 void MyUart_Send(const void *buffer,rt_size_t size);
 void Register_MyUart_Recv_Callback(Func_Uart_Recv func);
+char *Get_PrintfTxt(void);
+void MyUart_Send_PrintfTxt(void);
+void MyUart_Send_PrintfString(const char *s);
 
 #endif

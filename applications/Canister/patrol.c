@@ -21,11 +21,18 @@ static void Patrol_Arrive_Callback(Motor_t const *motor,Target_e kind)
     {
         /* 输出到达设定值的当前角度值 */
         if (kind == PATROL_POS_START)
-            sprintf(printf_txt,"patrol start: %3.3f (angle)\n",Canister_Read_NowPos());
+        {
+            sprintf(Get_PrintfTxt(),"patrol: in start: %3.3f (angle)\n",Canister_Read_NowPos());
+            MyUart_Send_PrintfTxt();
+            MyUart_Send_PrintfString("------------------------>>>\n");
+        }
         else if (kind == PATROL_POS_END)
-            sprintf(printf_txt,"patrol end  : %3.3f (angle)\n",Canister_Read_NowPos());
+        {
+            sprintf(Get_PrintfTxt(),"patrol: in end  : %3.3f (angle)\n",Canister_Read_NowPos());
+            MyUart_Send_PrintfTxt();
+            MyUart_Send_PrintfString("<<<------------------------\n");
+        }
 
-        MyUart_Send(printf_txt,rt_strlen(printf_txt));
 
         /* 到达目标点后迁入暂停态 */
         patrol.now_endpoint = kind;
@@ -95,7 +102,7 @@ rt_err_t Patrol_Init(void)
     Register_Target_Callback(Patrol_Arrive_Callback,PATROL_POS_END);
 
     //初始化线程
-    rt_thread_t thread = rt_thread_create("Patrol_Thread",Patrol_Thread,RT_NULL,1024,12,10);
+    rt_thread_t thread = rt_thread_create("Patrol_Thread",Patrol_Thread,RT_NULL,1024,18,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 

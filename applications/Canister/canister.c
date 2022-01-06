@@ -12,7 +12,6 @@ static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准,TODO:改�
 static Adjust_t canister_adjust = {
     .pos_max = DEFAULT_POS_MAX,
     .pos_min = DEFAULT_POS_MIN,
-    .range = 0,//TODO:
     .adjust_complete = RT_NULL,
 };
 
@@ -77,9 +76,6 @@ static void Canister_Thread(void *parameter)
 
         if (en_angle_loop == 1)
         {
-            for (int i = 0;i<TARGET_NUM;i++)
-                Target_Callback_Process(&target_point[i]);
-
             Motor_AnglePIDCalculate(&M3508,Motor_Read_NowAngle(&M3508));
             Motor_Write_SetSpeed_ABS(&M3508,M3508.ang.out);
         }
@@ -87,6 +83,21 @@ static void Canister_Thread(void *parameter)
         Motor_SpeedPIDCalculate(&M3508,Motor_Read_NowSpeed(&M3508));
 
         motor_current_send(can1_dev,STDID_launch,Motor_Read_OutSpeed(&M3508),0,0,0);
+    }
+}
+
+/* 单独开一个线程,提高电机闭环的实时性 */
+static void Canister_Callback_Thread(void *parameter)
+{
+    while(1)
+    {
+        if (en_angle_loop == 1)
+        {
+            for (int i = 0; i < TARGET_NUM; i++)
+            Target_Callback_Process(&target_point[i]);
+        }
+        
+        rt_thread_mdelay(1);
     }
 }
 
@@ -119,7 +130,7 @@ rt_err_t Canister_Init(void)
 		return res;
 
     //初始化线程
-    thread = rt_thread_create("Canister_Thread",Canister_Thread,RT_NULL,1024,10,10);
+    thread = rt_thread_create("Canister_Thread",Canister_Thread,RT_NULL,1024,11,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 
@@ -133,8 +144,16 @@ rt_err_t Canister_Init(void)
     res = rt_timer_start(canister_timer);
     if ( res != RT_EOK)
 		return res;
-    
-	return RT_EOK;
+        
+    //初始化线程
+    thread = rt_thread_create("Canis_cb",Canister_Callback_Thread,RT_NULL,1024,13,10);
+    if(thread == RT_NULL)
+        return RT_ERROR;
+
+    if(rt_thread_startup(thread) != RT_EOK)
+        return RT_ERROR;
+	
+    return RT_EOK;
 }
 
 void Canister_Refresh_Motor(struct rt_can_msg *msg)
@@ -238,8 +257,7 @@ static float Cansiter_Adjust_Pos(float speed_run)
                 // Canister_Set_Position(Canister_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
 
                 en_pos_adjust = 2;//异常
-                rt_strncpy(printf_txt,"Motor calibration timeout!\n",29);//TODO:检查29
-                MyUart_Send(printf_txt,rt_strlen(printf_txt));
+                MyUart_Send_PrintfString("Motor calibration timeout!\n");
                 return 0;
             }
         }
@@ -268,12 +286,10 @@ static void Adjust_Thread(void *parameter)
                 goto _adjust_error;
             }
 
-            canister_adjust.range = canister_adjust.pos_max - canister_adjust.pos_min;
-            
             en_pos_adjust = 0;  //校准完毕
 
             if (canister_adjust.adjust_complete != RT_NULL)
-                (*canister_adjust.adjust_complete)(canister_adjust.range);
+                (*canister_adjust.adjust_complete)(canister_adjust.pos_max - canister_adjust.pos_min);
         }
 
     _adjust_error:
@@ -284,7 +300,7 @@ static void Adjust_Thread(void *parameter)
 rt_err_t Canister_Adjust_Init(void)
 {
     //初始化线程
-    rt_thread_t thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,15,10);
+    rt_thread_t thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,13,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 

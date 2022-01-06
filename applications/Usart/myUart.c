@@ -7,8 +7,8 @@ static rt_device_t MyUart_Serial;
 static Func_Uart_Recv recv_process_p = RT_NULL;
 static union uart_cmd my_agree;
 
-char printf_txt[50];//注意: 不能在回调里使用MyUart_Send发送局部变量的值。会发送错误，显示乱码。
-//TODO:加锁保护,测试能否直接发送字符常量,估计不行
+static char printf_txt[64];
+static struct rt_mutex printf_txt_mutex;
 
 static rt_err_t MyUart_Callback(rt_device_t dev, rt_size_t size)
 {
@@ -50,6 +50,11 @@ rt_err_t MyUart_Init(void)
 {
     rt_err_t res = RT_EOK;
 
+    /* 初始化打印的互斥保护 */
+    res = rt_mutex_init(&printf_txt_mutex,"print_txt",RT_IPC_FLAG_PRIO);
+	if ( res != RT_EOK)
+		return res;	
+
     /* 使用默认的串口配置，配置为波特率 115200,8位数据位,1位停止位,无校验位 */
     MyUart_Serial = rt_device_find(MY_USE_UART);
 	if (!MyUart_Serial)
@@ -77,7 +82,7 @@ rt_err_t MyUart_Init(void)
 		return res;
 
     rt_thread_t MyUart_Thread = rt_thread_create("MyUart_Thread", MyUart_Process_thread, 
-												RT_NULL, 1024, 7, 10);
+												RT_NULL, 1024, 15, 10);
     if (MyUart_Thread != RT_NULL)
     {
         rt_thread_startup(MyUart_Thread);
@@ -90,13 +95,42 @@ rt_err_t MyUart_Init(void)
     return RT_EOK;
 }
 
+void Register_MyUart_Recv_Callback(Func_Uart_Recv func)
+{
+    recv_process_p = func;
+}
 
 void MyUart_Send(const void *buffer,rt_size_t size)
 {
     rt_device_write(MyUart_Serial,0,buffer,size);
 }
 
-void Register_MyUart_Recv_Callback(Func_Uart_Recv func)
+char *Get_PrintfTxt(void)
 {
-    recv_process_p = func;
+    if (rt_mutex_take(&printf_txt_mutex,RT_WAITING_FOREVER) == RT_EOK)
+    {
+        rt_memset(printf_txt,'\0',50);
+        return printf_txt;
+    }
+    else
+    {
+        RT_ASSERT(0);//一般不会失败,便不做特殊处理
+        return RT_NULL;
+    }
+}
+
+void MyUart_Send_PrintfTxt(void)
+{
+    rt_device_write(MyUart_Serial,0,printf_txt,rt_strlen(printf_txt));
+    rt_thread_mdelay(10);//不使用延时会有bug(后发送的字符会覆盖前面的),目前不清楚原因(-_-||)
+
+    rt_mutex_release(&printf_txt_mutex);
+}
+
+void MyUart_Send_PrintfString(const char *s)
+{
+    const rt_uint8_t size = rt_strlen(s);
+    rt_strncpy(Get_PrintfTxt(),s,size);
+
+    MyUart_Send_PrintfTxt();
 }
