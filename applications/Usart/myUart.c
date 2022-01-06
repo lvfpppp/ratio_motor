@@ -20,7 +20,7 @@ static rt_err_t MyUart_Callback(rt_device_t dev, rt_size_t size)
 	result = rt_mq_send(&my_uart_mq, &msg, sizeof(msg));
 	if (result == -RT_EFULL)
 	{
-		rt_kprintf("my_uart: message queue full\n");
+		MyUart_Send_PrintfString("[my_uart]: message queue full\n");
 	}
 	return result;
 }
@@ -58,10 +58,7 @@ rt_err_t MyUart_Init(void)
     /* 使用默认的串口配置，配置为波特率 115200,8位数据位,1位停止位,无校验位 */
     MyUart_Serial = rt_device_find(MY_USE_UART);
 	if (!MyUart_Serial)
-    {
-        rt_kprintf("rt_device_find my UART failed !\n");
 		return RT_ERROR;
-    }
 
 	/* 初始化消息队列 */
     res = rt_mq_init(&my_uart_mq, "my_uart_mq",

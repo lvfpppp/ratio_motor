@@ -14,9 +14,9 @@
 #define DEFAULT_ERR_PRECISION   (2.5)              //默认辨识精度,单位度
 
 #define ADJUST_SPEED_RUN        (500)              //校准时的速度,单位小转子的rpm
-#define ADJUST_SPEED_STOP       (200)              //校准时的速度,单位小转子的rpm
 #define ADJUST_TIME             (300)              //校准判断时长,单位ms
 #define ADJUST_TIMEOUT          (((RATIO_MOTOR_MOTOR_RATIO/ADJUST_SPEED_RUN)*60*1000)/2)    //校准超时判断时长,单位ms
+#define ADJUST_POS_MARGIN       (2)                //堵转校准后预留的位置余量,单位度
 
 /* 限制数值范围 */
 #define VALUE_CLAMP(val,min,max)    do{\
@@ -49,8 +49,27 @@ typedef struct
 
 } Target_t;
 
+typedef enum
+{
+    ADJ_IDLE,
+
+    ADJ_CLOCKWISE,
+    ADJ_CLOCKWISE_RUNNING,
+    ADJ_COUNTER_CLOCKWISE,
+    ADJ_COUNTER_CLOCKWISE_RUNNING,
+
+    ADJ_ERROR,
+    ADJ_SUCCESS,
+
+} Adjust_e;
+
 typedef struct
 {
+    Adjust_e state;
+    
+    rt_int32_t  cnt;
+    rt_int32_t  timeout_cnt;
+
     float pos_max;
     float pos_min;
     void (*complete)(float);
@@ -71,9 +90,9 @@ void Target_Set_Pos(float pos, Target_e kind);
 void Register_Target_Callback(Func_Arrive func, Target_e kind);
 void Target_Set_Precision(float precision, Target_e kind);
 
-void RatioM_Adjust_Start(void);
 rt_err_t RatioM_Adjust_Init(void);
-rt_uint8_t RatioM_Adjust_Get_State(void);
+void RatioM_Adjust_Start(void);
+rt_bool_t RatioM_Adjust_If_Finsh(void);
 void Register_Adjust_Callback(void (*func)(float));
 
 #endif

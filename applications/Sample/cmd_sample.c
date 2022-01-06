@@ -1,5 +1,4 @@
 #include "myUart.h"
-#include <stdio.h>
 
 extern void Board_Base_Init(void);
 
@@ -49,7 +48,6 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 
 
 /*
-(需要取消设置串口2为控制台串口)
 使用 vofa 的 RawData协议引擎，
 十六进制发送：AA AB 01 00 00 00 36 C2 00 00 B4 42 CD 55 00 00
 CMD 1: set pos -45.500
@@ -60,10 +58,6 @@ CMD 4: I  -45.5, V   90.0
 */
 int cmd_main(void)
 {
-    /* 串口2初始化 */
-    rt_err_t res = MyUart_Init();
-    RT_ASSERT(res == RT_EOK);
-
     Board_Base_Init();
 
     Register_MyUart_Recv_Callback(Agree_Analysis);

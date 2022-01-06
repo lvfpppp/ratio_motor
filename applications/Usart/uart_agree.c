@@ -66,18 +66,8 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
             break;
 
         case 3:
-            //开始校准,阻塞至校准完,TODO:加个校准超时停止和打印
-            MyUart_Send_PrintfString("[CMD 3]: Now start calibrating the motor.\n");
-
+            //开始校准电机
             RatioM_Adjust_Start();
-            //等待校准完毕
-            while(RatioM_Adjust_Get_State() == 1){
-                rt_thread_mdelay(1);
-            }
-            if (RatioM_Adjust_Get_State() == 0)
-                MyUart_Send_PrintfString("[CMD 3]: successfully finished calibrating the motor.\n");
-            else
-                MyUart_Send_PrintfString("[CMD 3]: Fail to finish calibrating the motor.\n");
             break;
 
         case 4:

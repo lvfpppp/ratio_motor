@@ -1,5 +1,5 @@
 #include "ratio_motor.h"
-#include <stdio.h>
+#include "myUart.h"
 
 extern void Board_Base_Init(void);
 
@@ -12,13 +12,16 @@ static Target_e now_pos;
 static void Patrol_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
-    char txt[10];
-    sprintf(txt,"%06.3f",Ratio_Motor_Read_NowPos());
-    
     if (kind == PATROL_POS_START)
-        rt_kprintf("Patrol Start: %s\n",txt);
+    {
+        sprintf(Get_PrintfTxt(),"Patrol Start: %06.3f (angle)} ",Ratio_Motor_Read_NowPos());
+        MyUart_Send_PrintfTxt();
+    }
     else if (kind == PATROL_POS_END)
-        rt_kprintf("Patrol End  : %s\n",txt);
+    {
+        sprintf(Get_PrintfTxt(),"Patrol End  : %06.3f (angle)} ",Ratio_Motor_Read_NowPos());
+        MyUart_Send_PrintfTxt();
+    }
 
     now_pos = kind;
 }
@@ -27,9 +30,8 @@ static void Patrol_Callback(Motor_t const *motor,Target_e kind)
 static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
-    char txt[10];
-    sprintf(txt,"%06.3f",Ratio_Motor_Read_NowPos());
-    rt_kprintf("PID: %s\n",txt);
+    sprintf(Get_PrintfTxt(),"PID: %06.3f (angle)} ",Ratio_Motor_Read_NowPos());
+    MyUart_Send_PrintfTxt();
 }
 
 /* 能实现电机的巡逻功能,并在到达目标点时,反馈数据 */
@@ -63,7 +65,6 @@ void Test_Ratio_motor(void)
 
 /* 根据 P_START_POS 和 P_END_POS 设定的起点和终点角度值，来回巡逻。
     在到达起点和终点后，会进入相应的回调函数
-    (rt_kprintf函数需要设置串口2为控制台串口)
 */
 int callback_main(void)
 {

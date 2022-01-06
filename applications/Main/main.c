@@ -1,6 +1,7 @@
 #include "drv_canthread.h"
 #include <board.h>
 #include "ratio_motor.h"
+#include "myUart.h"
 
 // #define EN_CALLBACK_TEST
 // #define EN_ADJUST_TEST
@@ -20,6 +21,10 @@ extern int all_fun_main(void);
 void Board_Base_Init(void)
 {
     rt_err_t res = RT_EOK;
+    
+    /* 串口2初始化 */
+    res = MyUart_Init();
+    RT_ASSERT(res == RT_EOK);
 
     /* can硬件电路要求,can_rs引脚拉低 */
     rt_pin_mode(CAN_RS_PIN, PIN_MODE_OUTPUT_OD);
@@ -33,7 +38,6 @@ void Board_Base_Init(void)
     Ratio_Motor_Init();
 }
 
-//TODO:分析所有线程的优先级,校准时间过长,打印和停止
 int main(void)
 {
 #if defined(EN_CALLBACK_TEST)

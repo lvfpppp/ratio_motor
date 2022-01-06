@@ -46,27 +46,12 @@ static void Adjust_Part_Init(void)
 
     RatioM_Adjust_Init();
     RatioM_Adjust_Start();
-	
-    //等待校准完毕
-    while(RatioM_Adjust_Get_State() == 1){
-        rt_thread_mdelay(1);
-    }
-
-    if (RatioM_Adjust_Get_State() == 0)
-        MyUart_Send_PrintfString("[adjust]: successfully finished calibrating the motor.\n");
-    else
-        MyUart_Send_PrintfString("[adjust]: Fail to finish calibrating the motor.\n");
-
 }
 ////////////////////////////////////////////////////////////////////
 
 /* 所有功能的主函数 */
 int all_fun_main(void)
 {
-    /* 串口2初始化 */
-    rt_err_t res = MyUart_Init();
-    RT_ASSERT(res == RT_EOK);
-
     Board_Base_Init();
 
     Adjust_Part_Init();

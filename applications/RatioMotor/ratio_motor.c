@@ -12,9 +12,11 @@ static Target_t target_point[TARGET_NUM] = {
 };
 
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
-static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准,TODO:改名
 
-static Adjust_t RatioM_adjust = {
+Adjust_t RatioM_adjust = {//TODO:加static
+    .state = ADJ_IDLE,
+    .cnt = 0,
+    .timeout_cnt = 0,
     .pos_max = DEFAULT_POS_MAX,
     .pos_min = DEFAULT_POS_MIN,
     .complete = RT_NULL,
@@ -36,7 +38,6 @@ static void Target_Callback_Process(Target_t *aim)
         aim->flag = 0;
     }
 }
-
 
 void Target_Set_Pos(float pos, Target_e kind)
 {
@@ -162,18 +163,22 @@ void Ratio_Motor_Refresh_Motor(struct rt_can_msg *msg)
 /* 正方向为电机输出轴的逆时针方向 */
 void Ratio_Motor_Set_Position(float angle)
 {
-    /* 检查边界合理性 */
-    RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
+    //电机校准完毕,才允许外部控制电机
+    if (RatioM_Adjust_If_Finsh() == RT_TRUE)
+    {
+        /* 检查边界合理性 */
+        RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
 
-    Target_Set_Pos(angle,MOTOR_SET);
-    
-    /* 角度补偿设定值 */
-    angle += RatioM_adjust.pos_min;
+        Target_Set_Pos(angle,MOTOR_SET);
 
-    /* 输入限幅 */
-    VALUE_CLAMP(angle,RatioM_adjust.pos_min,RatioM_adjust.pos_max);
+        /* 角度补偿设定值 */
+        angle += RatioM_adjust.pos_min;
 
-    Motor_Write_SetAngle_ABS(&M3508,angle);
+        /* 输入限幅 */
+        VALUE_CLAMP(angle,RatioM_adjust.pos_min,RatioM_adjust.pos_max);
+
+        Motor_Write_SetAngle_ABS(&M3508,angle);
+    }
 }
 
 float Ratio_Motor_Read_NowPos(void)
@@ -219,102 +224,144 @@ const Motor_t* Ratio_Motor_Read_MotorData(void)
     return &M3508;
 }
 
-static float RatioM_Adjust_Pos(float speed_run)
+static void Adjust_Running_Normal(void)
 {
-    static rt_int32_t _cnt = 0;
-    static rt_int32_t timeout_cnt = 0;
+    /* 速度回归正常,开始补偿 */
+    RatioM_adjust.cnt -= 10;
+    if (RatioM_adjust.cnt < 0)
+    RatioM_adjust.cnt = 0;
 
-    en_angle_loop = 0;//开启速度闭环
-
-    Motor_Write_SetSpeed_ABS(&M3508,speed_run);
-    rt_thread_mdelay(400);//延时一段时间,以便达到设定转速
-
-    while(1)
+    /* 未出现掉速一段时间 */
+    RatioM_adjust.timeout_cnt ++;
+    if (RatioM_adjust.timeout_cnt > ADJUST_TIMEOUT)
     {
-        // if (fabs(M3508.dji.speed) < fabs(ADJUST_SPEED_STOP))
-        if (fabs(M3508.spe.err) > fabs(speed_run/2))
-        {
-            _cnt ++;
-            /* 堵转 */
-            if (_cnt > ADJUST_TIME)
-            {
-                _cnt = 0;
-                timeout_cnt = 0;
-
-                en_angle_loop = 1;  //开启角度闭环
-                Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
-                // Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
-
-                return Motor_Read_NowAngle(&M3508);
-            }
-        }
-        else
-        {
-            /* 速度回归正常,开始补偿 */
-            _cnt -= 10;
-            if (_cnt < 0)
-                _cnt = 0;
-
-            /* 未出现掉速一段时间 */
-            timeout_cnt ++;
-            if (timeout_cnt > ADJUST_TIMEOUT)
-            {
-                _cnt = 0;
-                timeout_cnt = 0;
-                
-                en_angle_loop = 1;  //开启角度闭环
-                Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
-                // Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
-
-                en_pos_adjust = 2;//异常
-                MyUart_Send_PrintfString("[adjust]: Motor calibration timeout!\n");
-                return 0;
-            }
-        }
-        rt_thread_mdelay(1);
+        en_angle_loop = 1;  //开启角度闭环
+        Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));//停在原地
+        MyUart_Send_PrintfString("[adjust]: Motor calibration timeout!\n");
+        RatioM_adjust.state = ADJ_ERROR;
     }
 }
 
-static void Adjust_Thread(void *parameter)
+//speed_run校准速度,带方向,> 0 逆时针
+static void Adjust_Start_Process(float speed_run)
 {
-    float temp_pos; //保护pos_min
+    RatioM_adjust.cnt = 0;
+    RatioM_adjust.timeout_cnt = 0;
 
+    en_angle_loop = 0;//开启速度闭环
+    Motor_Write_SetSpeed_ABS(&M3508, speed_run);
+}
+
+static void Adjust_Clockwise_Process(void)
+{
+    if (M3508.spe.err < - ADJUST_SPEED_RUN/2) 
+    {
+        RatioM_adjust.cnt ++;
+        //顺时针堵转
+        if (RatioM_adjust.cnt > ADJUST_TIME)
+        {
+            en_angle_loop = 1;  //开启角度闭环
+            
+            //停在最小值附近,预留一段距离
+            Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508) + ADJUST_POS_MARGIN);
+            rt_thread_mdelay(10);
+
+            RatioM_adjust.pos_min = Motor_Read_NowAngle(&M3508);
+            RatioM_adjust.state = ADJ_COUNTER_CLOCKWISE;
+        }
+    }
+    else
+        Adjust_Running_Normal();
+}
+
+static void Adjust_CounterClockwise_Process(void)
+{
+    if (M3508.spe.err > ADJUST_SPEED_RUN/2)
+    {
+        RatioM_adjust.cnt ++;
+        //逆时针堵转
+        if (RatioM_adjust.cnt > ADJUST_TIME)
+        {
+            en_angle_loop = 1;  //开启角度闭环
+
+            //停在最大值附近,预留一段距离
+            Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508) - ADJUST_POS_MARGIN);
+            rt_thread_mdelay(10);
+
+            RatioM_adjust.pos_max = Motor_Read_NowAngle(&M3508);
+            RatioM_adjust.state = ADJ_SUCCESS;
+        }
+    }
+    else
+        Adjust_Running_Normal();
+}
+
+static void Adjust_Success_Process(void)
+{
+    //检查正负性
+    if (RatioM_adjust.pos_max < RatioM_adjust.pos_min)
+    {
+        MyUart_Send_PrintfString("[adjust]: The motor calibration result is incorrect!\n");
+        RatioM_adjust.state = ADJ_ERROR;
+        return;
+    }
+
+    MyUart_Send_PrintfString("[adjust]: Calibrate the motor successfully!\n");
+    if (RatioM_adjust.complete != RT_NULL)
+        (*RatioM_adjust.complete)(RatioM_adjust.pos_max - RatioM_adjust.pos_min);
+    
+    RatioM_adjust.state = ADJ_IDLE;
+}
+
+static void RatioM_Adjust_Thread(void *parameter)
+{
     while(1)
     {
-        if (en_pos_adjust == 1)
+        switch (RatioM_adjust.state)
         {
-            temp_pos = RatioM_Adjust_Pos(-ADJUST_SPEED_RUN);
-            if (en_pos_adjust == 2)
-                goto _adjust_error;
-            RatioM_adjust.pos_min = temp_pos;
+        case ADJ_IDLE:
+            rt_thread_mdelay(1);
+            break;
 
-            RatioM_adjust.pos_max = RatioM_Adjust_Pos(ADJUST_SPEED_RUN);
-            //检查正负性
-            if (RatioM_adjust.pos_max < RatioM_adjust.pos_min)
-                en_pos_adjust = 2;
+        case ADJ_CLOCKWISE:
+            Adjust_Start_Process(- ADJUST_SPEED_RUN);
+            rt_thread_mdelay(400);//延时一段时间,以便达到设定转速
+            RatioM_adjust.state = ADJ_CLOCKWISE_RUNNING;
+            break;
+        
+        case ADJ_CLOCKWISE_RUNNING:
+            Adjust_Clockwise_Process();
+            rt_thread_mdelay(1);
+            break;
 
-            if (en_pos_adjust == 2)
-            {
-                RatioM_adjust.pos_max = DEFAULT_POS_MAX;
-                RatioM_adjust.pos_min = DEFAULT_POS_MIN;
-                goto _adjust_error;
-            }
-
-            if (RatioM_adjust.complete != RT_NULL)
-                (*RatioM_adjust.complete)(RatioM_adjust.pos_max - RatioM_adjust.pos_min);
-                
-            en_pos_adjust = 0;  //校准完毕
+        case ADJ_COUNTER_CLOCKWISE:
+            Adjust_Start_Process(ADJUST_SPEED_RUN);
+            rt_thread_mdelay(400);//延时一段时间,以便达到设定转速
+            RatioM_adjust.state = ADJ_COUNTER_CLOCKWISE_RUNNING;
+            break;
+        
+        case ADJ_COUNTER_CLOCKWISE_RUNNING:
+            Adjust_CounterClockwise_Process();
+            rt_thread_mdelay(1);
+            break;
+        
+        case ADJ_ERROR:
+            RatioM_adjust.pos_max = DEFAULT_POS_MAX;
+            RatioM_adjust.pos_min = DEFAULT_POS_MIN;
+            RatioM_adjust.state = ADJ_IDLE;
+            break;
+        
+        case ADJ_SUCCESS:
+            Adjust_Success_Process();
+            break;
         }
-
-    _adjust_error:
-        rt_thread_mdelay(1);
     }
 }
 
 rt_err_t RatioM_Adjust_Init(void)
 {
     //初始化线程
-    rt_thread_t thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,13,10);
+    rt_thread_t thread = rt_thread_create("Adjust_thread",RatioM_Adjust_Thread,RT_NULL,1024,13,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 
@@ -326,13 +373,20 @@ rt_err_t RatioM_Adjust_Init(void)
 
 void RatioM_Adjust_Start(void)
 {
-    en_pos_adjust = 1;
+    if (RatioM_adjust.state == ADJ_IDLE)
+    {
+        MyUart_Send_PrintfString("[adjust]: Now start calibrating the motor.\n");
+        RatioM_adjust.state = ADJ_CLOCKWISE;
+    }
 }
 
-//1为开启位置的校准,0为校准结束或者未开始校准,2是校准失败
-rt_uint8_t RatioM_Adjust_Get_State(void)
+//RT_TRUE为校准完成或失败空闲,RT_FALSE为正在校准
+rt_bool_t RatioM_Adjust_If_Finsh(void)
 {
-    return en_pos_adjust;
+    if (RatioM_adjust.state == ADJ_IDLE)
+        return RT_TRUE;
+    else
+        return RT_FALSE;
 }
 
 void Register_Adjust_Callback(void (*func)(float))

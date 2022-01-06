@@ -24,14 +24,14 @@ static void Patrol_Arrive_Callback(Motor_t const *motor,Target_e kind)
         /* 输出到达设定值的当前角度值 */
         if (kind == PATROL_POS_START)
         {
-            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %06.3f (angle)} ",Ratio_Motor_Read_NowPos());
+            MyUart_Send_PrintfString("}}}}}}}=================>>>\n");
+            sprintf(Get_PrintfTxt(),"[patrol]: now in start (angle %06.3f)\n",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
-            MyUart_Send_PrintfString("========>>>>\n");
         }
         else if (kind == PATROL_POS_END)
         {
-            MyUart_Send_PrintfString("\n<<<<========");
-            sprintf(Get_PrintfTxt()," {patrol: in end  : %06.3f (angle)} ===[\n",Ratio_Motor_Read_NowPos());
+            MyUart_Send_PrintfString("<<<================={{{{{{{\n");
+            sprintf(Get_PrintfTxt(),"[patrol]: now in end   (angle %06.3f)\n",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
         }
 
@@ -126,7 +126,9 @@ void Patrol_Fun_Close(void)
 //巡逻功能打开
 void Patrol_Fun_Open(void)
 {
-    Patrol_Move_Opposite();
+    //只有当校准完毕,才能开始巡逻
+    if (RatioM_Adjust_If_Finsh() == RT_TRUE)//TODO:打印
+        Patrol_Move_Opposite();
 }
 
 void Patrol_Set_Pos(float start,float end)

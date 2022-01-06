@@ -1,15 +1,16 @@
 #include "ratio_motor.h"
-#include <stdio.h>
+#include "myUart.h"
 
 extern void Board_Base_Init(void);
 
 static void Adjust_Complete_Callback(float range)
 {
-    char txt[10];
-    sprintf(txt,"%06.3f",range);
-    rt_kprintf("motor adjust result:\n");
-    rt_kprintf("min angle: 0\n");
-    rt_kprintf("max angle: %s\n",txt);
+    MyUart_Send_PrintfString("+-------------------------+\n");
+    MyUart_Send_PrintfString("|  motor adjust result    |\n");
+    MyUart_Send_PrintfString("|  min angle: 0              |\n");
+    sprintf(Get_PrintfTxt(), "|  max angle: %06.3f    |\n",range);
+    MyUart_Send_PrintfTxt();
+    MyUart_Send_PrintfString("+-------------------------+\n");
 }
 
 static float test_angle = 0;
@@ -22,8 +23,7 @@ static void Test_Adjust(void)
 
     while(1)
     {
-        if (RatioM_Adjust_Get_State() == 0)
-            Ratio_Motor_Set_Position(test_angle);
+        Ratio_Motor_Set_Position(test_angle);
         
         rt_thread_mdelay(10);
     }
@@ -34,7 +34,6 @@ static void Test_Adjust(void)
     然后遇到最大位置边界，便会停止到边界的最小值上。
     在校准完后，通过在debug窗口修改test_angle变量值，
     则可以测试角度闭环（基于校准好后的角度）
-    (rt_kprintf函数需要设置串口2为控制台串口)
 */
 int adjust_main(void)
 {

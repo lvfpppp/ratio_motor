@@ -12,14 +12,9 @@ static const rt_uint8_t vofa_tail[4] = {0x00, 0x00, 0x80, 0x7f};
 (从速度闭环切到角度闭环时,注意清空 M3508.dji.loop 变量。
 否则设定角度闭环时，会转到loop为0时的角度才会停下。)
 然后通过修改watch窗口的值实现调参的功能
-(需要取消设置串口2为控制台串口)
  */
 int pid_main(void)
 {
-    /* 串口2初始化 */
-    rt_err_t res = MyUart_Init();
-    RT_ASSERT(res == RT_EOK);
-
     Board_Base_Init();
 
     float ch[4];
