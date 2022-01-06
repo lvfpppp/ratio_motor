@@ -2,6 +2,7 @@
 #include "myUart.h"
 #include "patrol.h"
 
+extern void rt_hw_cpu_reset(void);
 
 const rt_uint16_t agree_head = 0xABAA;
 const rt_uint16_t agree_tail = 0x55CD;
@@ -9,7 +10,7 @@ const rt_uint16_t agree_tail = 0x55CD;
 
 static void List_All_Command(void)
 {
-    MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
+    MyUart_Send_PrintfString("\n+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
     MyUart_Send_PrintfString("|           head        |   cmd  | data1 |");   MyUart_Send_PrintfString(" data2 |            tail          |\n");
     MyUart_Send_PrintfString("|------------------- +-------+-------+");   MyUart_Send_PrintfString("-------+------------------- |\n");
     sprintf(Get_PrintfTxt(),"| 0x%02X ",agree_head); 
@@ -24,9 +25,10 @@ static void List_All_Command(void)
     MyUart_Send_PrintfString("| $ cmd3: Start the calibration function.");    MyUart_Send_PrintfString("                               |\n");
     MyUart_Send_PrintfString("| $ cmd4: Set the max current and max speed."); MyUart_Send_PrintfString("                    |\n");
     MyUart_Send_PrintfString("| $ cmd5: Start patrol function.");             MyUart_Send_PrintfString("                                            |\n");
-    MyUart_Send_PrintfString("| $ cmd6: End patrol function.");               MyUart_Send_PrintfString("                                              |\n");
-    MyUart_Send_PrintfString("| $ cmd7: Printing Help Information.");         MyUart_Send_PrintfString("                                    |\n");
-    MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
+    MyUart_Send_PrintfString("| $ cmd6: End patrol function.");               MyUart_Send_PrintfString("                                             |\n");
+    MyUart_Send_PrintfString("| $ cmd7: Printing Help Information.");         MyUart_Send_PrintfString("                                   |\n");
+    MyUart_Send_PrintfString("| $ cmd8: Reset microcontroller.");             MyUart_Send_PrintfString("                                         |\n");
+    MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n\n");
 }
 
 static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
@@ -39,7 +41,7 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
         {
         case 1:
             //设置角度闭环到一个位置
-            sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %03.3f\n\n",recv_cmd_p->data1);
+            sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %06.3f\n",recv_cmd_p->data1);
             MyUart_Send_PrintfTxt();
             
             Ratio_Motor_Set_Position(recv_cmd_p->data1);
@@ -56,7 +58,7 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
                 VALUE_CLAMP(p_start,0,ratio_motor_max);
                 VALUE_CLAMP(p_end,0,ratio_motor_max);
 
-                sprintf(Get_PrintfTxt(),"[CMD 2]: start %03.3f, end %03.3f\n\n",p_start,p_end);
+                sprintf(Get_PrintfTxt(),"[CMD 2]: start %06.3f, end %06.3f\n",p_start,p_end);
                 MyUart_Send_PrintfTxt();
 
                 Patrol_Set_Pos(p_start,p_end);
@@ -65,7 +67,7 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 
         case 3:
             //开始校准,阻塞至校准完,TODO:加个校准超时停止和打印
-            MyUart_Send_PrintfString("[CMD 3]: Now start calibrating the motor.\n\n");
+            MyUart_Send_PrintfString("[CMD 3]: Now start calibrating the motor.\n");
 
             RatioM_Adjust_Start();
             //等待校准完毕
@@ -73,14 +75,14 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
                 rt_thread_mdelay(1);
             }
             if (RatioM_Adjust_Get_State() == 0)
-                MyUart_Send_PrintfString("[CMD 3]: successfully finished calibrating the motor.\n\n");
+                MyUart_Send_PrintfString("[CMD 3]: successfully finished calibrating the motor.\n");
             else
-                MyUart_Send_PrintfString("[CMD 3]: Fail to finish calibrating the motor.\n\n");
+                MyUart_Send_PrintfString("[CMD 3]: Fail to finish calibrating the motor.\n");
             break;
 
         case 4:
             //设置最大电流和最大速度
-            sprintf(Get_PrintfTxt(),"[CMD 4]: I %6.1f, V %6.1f\n\n",recv_cmd_p->data1,recv_cmd_p->data2);
+            sprintf(Get_PrintfTxt(),"[CMD 4]: I %6.1f, V %6.1f\n",recv_cmd_p->data1,recv_cmd_p->data2);
             MyUart_Send_PrintfTxt();
 
             Ratio_Motor_Set_MaxCurrent(recv_cmd_p->data1);
@@ -89,24 +91,30 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 
         case 5:
             //开始巡逻
-            MyUart_Send_PrintfString("[CMD 5]: Start patrol.\n\n");
+            MyUart_Send_PrintfString("[CMD 5]: Start patrol.\n");
             Patrol_Fun_Open();
             break;
         
         case 6:
             //停止巡逻
-            MyUart_Send_PrintfString("[CMD 6]: Finish patrol.\n\n");
+            MyUart_Send_PrintfString("[CMD 6]: Finish patrol.\n");
             Patrol_Fun_Close();
             break;
 
         case 7:
-            List_All_Command();
             //打印所有指令信息
-
+            MyUart_Send_PrintfString("[CMD 7]: Prints all command information.\n");
+            List_All_Command();
             break;
+        
+        case 8:
+            //单片机复位
+            MyUart_Send_PrintfString("[CMD 8]: Reset microcontroller.\n");
+            rt_hw_cpu_reset();
+
         default:
             //无该指令
-            MyUart_Send_PrintfString("[Wrong command.]\n\n");
+            MyUart_Send_PrintfString("[Wrong command.]\n");
             break;
         }
     }

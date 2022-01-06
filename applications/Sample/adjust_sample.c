@@ -6,7 +6,7 @@ extern void Board_Base_Init(void);
 static void Adjust_Complete_Callback(float range)
 {
     char txt[10];
-    sprintf(txt,"%03.3f",range);
+    sprintf(txt,"%06.3f",range);
     rt_kprintf("motor adjust result:\n");
     rt_kprintf("min angle: 0\n");
     rt_kprintf("max angle: %s\n",txt);

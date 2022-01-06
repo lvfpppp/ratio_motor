@@ -24,14 +24,14 @@ static void Patrol_Arrive_Callback(Motor_t const *motor,Target_e kind)
         /* 输出到达设定值的当前角度值 */
         if (kind == PATROL_POS_START)
         {
-            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %03.3f (angle)} ",Ratio_Motor_Read_NowPos());
+            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %06.3f (angle)} ",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
             MyUart_Send_PrintfString("========>>>>\n");
         }
         else if (kind == PATROL_POS_END)
         {
             MyUart_Send_PrintfString("\n<<<<========");
-            sprintf(Get_PrintfTxt()," {patrol: in end  : %03.3f (angle)} ===[\n",Ratio_Motor_Read_NowPos());
+            sprintf(Get_PrintfTxt()," {patrol: in end  : %06.3f (angle)} ===[\n",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
         }
 

@@ -15,7 +15,7 @@ static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
     
     /* 输出到达设定值的当前角度值 */
     MyUart_Send_PrintfString("+------------------------------------+\n");
-    sprintf(Get_PrintfTxt(),"|  PID steady state: %03.3f (angle)  |\n",Ratio_Motor_Read_NowPos());
+    sprintf(Get_PrintfTxt(),"|  PID steady state: %06.3f (angle)  |\n",Ratio_Motor_Read_NowPos());
     MyUart_Send_PrintfTxt();
     MyUart_Send_PrintfString("+------------------------------------+\n");
 
@@ -34,7 +34,7 @@ static void Adjust_Complete_Callback(float range)
     MyUart_Send_PrintfString("+-------------------------+\n");
     MyUart_Send_PrintfString("|  motor adjust result    |\n");
     MyUart_Send_PrintfString("|  min angle: 0              |\n");
-    sprintf(Get_PrintfTxt(), "|  max angle: %03.3f    |\n",range);
+    sprintf(Get_PrintfTxt(), "|  max angle: %06.3f    |\n",range);
     MyUart_Send_PrintfTxt();
     MyUart_Send_PrintfString("+-------------------------+\n");
 }
@@ -48,11 +48,15 @@ static void Adjust_Part_Init(void)
     RatioM_Adjust_Start();
 	
     //等待校准完毕
-    while(RatioM_Adjust_Get_State() != 0){
+    while(RatioM_Adjust_Get_State() == 1){
         rt_thread_mdelay(1);
     }
 
-    // Ratio_Motor_Set_Position(0);//停在0位
+    if (RatioM_Adjust_Get_State() == 0)
+        MyUart_Send_PrintfString("[adjust]: successfully finished calibrating the motor.\n");
+    else
+        MyUart_Send_PrintfString("[adjust]: Fail to finish calibrating the motor.\n");
+
 }
 ////////////////////////////////////////////////////////////////////
 

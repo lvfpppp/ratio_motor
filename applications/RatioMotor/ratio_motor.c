@@ -267,7 +267,7 @@ static float RatioM_Adjust_Pos(float speed_run)
                 // Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
 
                 en_pos_adjust = 2;//异常
-                MyUart_Send_PrintfString("Motor calibration timeout!\n");
+                MyUart_Send_PrintfString("[adjust]: Motor calibration timeout!\n");
                 return 0;
             }
         }

@@ -16,13 +16,13 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
         {
         case 1:
             //设置角度闭环到一个位置
-            sprintf(feedback_txt,"CMD 1: set pos %03.3f\n",recv_cmd_p->data1);
+            sprintf(feedback_txt,"CMD 1: set pos %06.3f\n",recv_cmd_p->data1);
             MyUart_Send(feedback_txt,rt_strlen(feedback_txt));
             break;
 
         case 2:
             //设置巡逻，两个角度之间来回跳转。
-            sprintf(feedback_txt,"CMD 2: min %03.3f, max %03.3f\n",recv_cmd_p->data1,recv_cmd_p->data2);
+            sprintf(feedback_txt,"CMD 2: min %06.3f, max %06.3f\n",recv_cmd_p->data1,recv_cmd_p->data2);
             MyUart_Send(feedback_txt,rt_strlen(feedback_txt));
             break;
 
