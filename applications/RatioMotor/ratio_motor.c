@@ -395,3 +395,20 @@ void Register_Adjust_Callback(void (*func)(float))
     RT_ASSERT(func != RT_NULL);
     RatioM_adjust.complete = func;
 }
+
+/* 检查val是否在校准后的数据范围之内,RT_TRUE为在其之内 */
+rt_bool_t Judge_In_Adjust_Range(float val)
+{
+    /* 检查边界合理性 */
+    RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
+
+    /* 角度补偿设定值 */
+    val += RatioM_adjust.pos_min;
+
+    if (val > RatioM_adjust.pos_max)
+        return RT_FALSE;
+    else if (val < RatioM_adjust.pos_min)
+        return RT_FALSE;
+
+    return RT_TRUE;
+}

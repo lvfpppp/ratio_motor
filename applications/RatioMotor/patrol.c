@@ -132,9 +132,18 @@ void Patrol_Fun_Open(void)
 {
     //只有当校准完毕,才能开始巡逻
     if (RatioM_Adjust_If_Finsh() == RT_TRUE)
-    {//检查,巡逻范围是否在校准的范围之内TODO:
-        MyUart_Send_PrintfString("[patrol]: ready ... ...\n");
-        Patrol_Move_Opposite();
+    {
+        //检查,巡逻范围是否在校准的范围之内
+        if (Judge_In_Adjust_Range(patrol.start_pos) && Judge_In_Adjust_Range(patrol.end_pos)) 
+        {
+            MyUart_Send_PrintfString("[patrol]: ready ... ...\n");
+            Patrol_Move_Opposite();
+        }
+        else
+            MyUart_Send_PrintfString("[patrol]: range is not within the range of calibration.\n");
+        
+        sprintf(Get_PrintfTxt(),"[patrol]: start angle %03.3f, end angle %03.3f\n",patrol.start_pos,patrol.end_pos);
+        MyUart_Send_PrintfTxt();
     }
     else
         MyUart_Send_PrintfString("[patrol]: The motor is not properly calibrated successfully.\n");

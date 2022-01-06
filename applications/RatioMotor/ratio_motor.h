@@ -95,6 +95,7 @@ rt_err_t RatioM_Adjust_Init(void);
 void RatioM_Adjust_Start(void);
 rt_bool_t RatioM_Adjust_If_Finsh(void);
 void Register_Adjust_Callback(void (*func)(float));
+rt_bool_t Judge_In_Adjust_Range(float val);
 
 #endif
 
