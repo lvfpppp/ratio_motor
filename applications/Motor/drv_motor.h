@@ -49,8 +49,8 @@ typedef struct
 typedef struct __Motor_t
 {
 	DjiMotor_t dji;
-	pid_t ang;
-	pid_t spe;
+	myPID_t ang;
+	myPID_t spe;
 } Motor_t;
 
 /**

@@ -6,7 +6,7 @@
  * @brief  pid参数设定
  * @param  pid：pid结构体指针
  */
-void pid_init(pid_t *pid,
+void pid_init(myPID_t *pid,
 			float kp, float ki, float kd,
 			float i_limit,
 			float 	out_limit_up,
@@ -36,7 +36,7 @@ void pid_init(pid_t *pid,
 * @return：	无
 * @author：mqy-ych
 */
-void PID_Calculate(pid_t *target, float Error)
+void PID_Calculate(myPID_t *target, float Error)
 {
 	target->err_old = target->err_LPF;
 	target->err = Error;
@@ -89,7 +89,7 @@ void PID_Calculate(pid_t *target, float Error)
 * @return：		无
 * @author：mqy
 */
-void pid_clear(pid_t* target)
+void pid_clear(myPID_t* target)
 {
 	//状态归零
 	target->err = 0;

@@ -22,7 +22,7 @@ typedef struct
 	float	out;				//pid的输出
 	float	out_limit_up;		//输出上限幅
 	float	out_limit_down;		//输出下限幅
-}pid_t;
+}myPID_t;
 //电机PID闭环结构体
 
 /*pid创建时参数初始化*/
@@ -44,13 +44,13 @@ typedef struct
     }
 
 
-extern void pid_init(pid_t *pid,
+extern void pid_init(myPID_t *pid,
 			float kp, float ki, float kd,
 			float i_limit,
 			float 	out_limit_up,
 			float 	out_limit_down);
 		
-extern void PID_Calculate(pid_t* target,float Error);
-extern void pid_clear(pid_t* target);
+extern void PID_Calculate(myPID_t* target,float Error);
+extern void pid_clear(myPID_t* target);
 	
 #endif
