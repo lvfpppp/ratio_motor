@@ -13,7 +13,7 @@ static Target_t target_point[TARGET_NUM] = {
 
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
 
-Adjust_t RatioM_adjust = {//TODO:加static
+static Adjust_t RatioM_adjust = {
     .state = ADJ_IDLE,
     .cnt = 0,
     .timeout_cnt = 0,
@@ -224,7 +224,7 @@ const Motor_t* Ratio_Motor_Read_MotorData(void)
     return &M3508;
 }
 
-static void Adjust_Running_Normal(void)
+static void Adjust_Running_Normal(float offset)
 {
     /* 速度回归正常,开始补偿 */
     RatioM_adjust.cnt -= 10;
@@ -236,7 +236,7 @@ static void Adjust_Running_Normal(void)
     if (RatioM_adjust.timeout_cnt > ADJUST_TIMEOUT)
     {
         en_angle_loop = 1;  //开启角度闭环
-        Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));//停在原地
+        Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508) + offset);//停在原地
         MyUart_Send_PrintfString("[adjust]: Motor calibration timeout!\n");
         RatioM_adjust.state = ADJ_ERROR;
     }
@@ -261,17 +261,15 @@ static void Adjust_Clockwise_Process(void)
         if (RatioM_adjust.cnt > ADJUST_TIME)
         {
             en_angle_loop = 1;  //开启角度闭环
-            
-            //停在最小值附近,预留一段距离
-            Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508) + ADJUST_POS_MARGIN);
-            rt_thread_mdelay(10);
+            RatioM_adjust.pos_min = Motor_Read_NowAngle(&M3508) + ADJUST_POS_MARGIN;
 
-            RatioM_adjust.pos_min = Motor_Read_NowAngle(&M3508);
+            //停在最小值附近,预留一段距离
+            Motor_Write_SetAngle_ABS(&M3508,RatioM_adjust.pos_min);
             RatioM_adjust.state = ADJ_COUNTER_CLOCKWISE;
         }
     }
     else
-        Adjust_Running_Normal();
+        Adjust_Running_Normal(ADJUST_POS_MARGIN);
 }
 
 static void Adjust_CounterClockwise_Process(void)
@@ -283,17 +281,15 @@ static void Adjust_CounterClockwise_Process(void)
         if (RatioM_adjust.cnt > ADJUST_TIME)
         {
             en_angle_loop = 1;  //开启角度闭环
+            RatioM_adjust.pos_max = Motor_Read_NowAngle(&M3508) - ADJUST_POS_MARGIN;
 
             //停在最大值附近,预留一段距离
-            Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508) - ADJUST_POS_MARGIN);
-            rt_thread_mdelay(10);
-
-            RatioM_adjust.pos_max = Motor_Read_NowAngle(&M3508);
+            Motor_Write_SetAngle_ABS(&M3508,RatioM_adjust.pos_max);
             RatioM_adjust.state = ADJ_SUCCESS;
         }
     }
     else
-        Adjust_Running_Normal();
+        Adjust_Running_Normal(- ADJUST_POS_MARGIN);
 }
 
 static void Adjust_Success_Process(void)
