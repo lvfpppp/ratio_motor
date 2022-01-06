@@ -3,10 +3,9 @@
 #include <rtthread.h>
 #include <stdio.h>
 
-#define MY_USE_UART "uart2"
+#define MY_USE_UART         "uart2"
+#define PRINTF_TXT_SIZE     64
 
-
-/* 串口驱动信息 */
 struct Uart_Msg
 {
 	rt_device_t dev;
@@ -15,14 +14,15 @@ struct Uart_Msg
 
 typedef struct
 {
-    rt_uint16_t head;
-    rt_uint8_t cmd;
-    float  data1;
-    float  data2;
-    rt_uint16_t tail;
+    rt_uint16_t head;   //数据头
+    rt_uint8_t cmd;     //命令
+    float  data1;       //数据1
+    float  data2;       //数据2
+    rt_uint16_t tail;   //数据尾
 
 } Ratio_motor_Cmd_t;
 
+//数据包共用体，方便操作
 union uart_cmd
 {
 	Ratio_motor_Cmd_t cmd;

@@ -2,11 +2,10 @@
 #define __PATROL_H__
 #include "ratio_motor.h"
 
+#define DEFAULT_PATROL_START_POS    0    //默认的起始点角度值,单位度
+#define DEFAULT_PATROL_END_POS      90   //默认的终点角度值,单位度
 
-#define DEFAULT_PATROL_START_POS    0    //单位度
-#define DEFAULT_PATROL_END_POS      90   //单位度
-
-#define PATROL_PAUSE_TIME   (1000)       //单位ms,到达顶点后停顿时间
+#define PATROL_PAUSE_TIME   (1000)       //到达顶点后停顿时间,单位ms
 
 
 enum patrol_state_e
@@ -20,12 +19,12 @@ enum patrol_state_e
 
 typedef struct
 {
-    enum patrol_state_e now_state;
-    Target_e now_endpoint;
+    enum patrol_state_e now_state;  //当前状态
+    Target_e now_endpoint;  //当前所在的端点位置
 
-    float start_pos;
-    float end_pos;
-    rt_uint32_t cnt;
+    float start_pos;    //起始点角度值
+    float end_pos;      //终点角度值
+    rt_uint32_t cnt;    //延时计数,提高状态迁移的响应速度
      
 } patrol_t;
 

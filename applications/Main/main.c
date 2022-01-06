@@ -3,11 +3,11 @@
 #include "ratio_motor.h"
 #include "myUart.h"
 
-// #define EN_CALLBACK_TEST
-// #define EN_ADJUST_TEST
-// #define EN_PID_DEBUG
-// #define EN_UART_CMD
-#define EN_ALL_FUN
+// #define EN_CALLBACK_TEST    //callback_sample.c
+// #define EN_ADJUST_TEST      //adjust_sample.c
+// #define EN_PID_DEBUG        //PID_sample.c
+// #define EN_UART_CMD         //cmd_sample.c
+#define EN_ALL_FUN          //all_fun_sample.c
 
 extern int callback_main(void);
 extern int adjust_main(void);

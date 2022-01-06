@@ -7,7 +7,9 @@ extern void rt_hw_cpu_reset(void);
 const rt_uint16_t agree_head = 0xABAA;
 const rt_uint16_t agree_tail = 0x55CD;
 
-
+/**
+ * @brief   列出所有命令信息
+ */
 static void List_All_Command(void)
 {
     MyUart_Send_PrintfString("\n+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
@@ -31,6 +33,10 @@ static void List_All_Command(void)
     MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n\n");
 }
 
+/**
+ * @brief   协议解析
+ * @param   recv_cmd_p 已拆分的数据包
+ */
 static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 {
     RT_ASSERT(recv_cmd_p != RT_NULL);
@@ -39,9 +45,8 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
     {
         switch (recv_cmd_p->cmd)
         {
-        case 1:
-            //设置角度闭环到一个位置
-            if (Patrol_If_Finsh() == RT_TRUE)
+        case 1: //设置角度闭环到一个位置
+            if (Patrol_If_Finsh() == RT_TRUE) //确保巡逻功能可用
             {
                 sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %06.3f\n",recv_cmd_p->data1);
                 MyUart_Send_PrintfTxt();
@@ -52,9 +57,8 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
                 MyUart_Send_PrintfString("[CMD 1]: Motor is occupied by Patrol function.\n");
             break;
 
-        case 2:
+        case 2: //设置巡逻角度
 			{
-                //设置巡逻角度
                 float p_start = recv_cmd_p->data1;
                 float p_end = recv_cmd_p->data2;
 
@@ -70,13 +74,11 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
             }
             break;
 
-        case 3:
-            //开始校准电机
+        case 3: //开始校准电机
             RatioM_Adjust_Start();
             break;
 
-        case 4:
-            //设置最大电流和最大速度
+        case 4: //设置最大电流和最大速度
             sprintf(Get_PrintfTxt(),"[CMD 4]: I %6.1f, V %6.1f\n",recv_cmd_p->data1,recv_cmd_p->data2);
             MyUart_Send_PrintfTxt();
 
@@ -84,37 +86,35 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
             Ratio_Motor_Set_MaxSpeed(recv_cmd_p->data2);
             break;
 
-        case 5:
-            //开始巡逻
+        case 5: //开始巡逻
             MyUart_Send_PrintfString("[CMD 5]: Start patrol.\n");
             Patrol_Fun_Open();
             break;
         
-        case 6:
-            //停止巡逻
+        case 6: //停止巡逻
             MyUart_Send_PrintfString("[CMD 6]: Finish patrol.\n");
             Patrol_Fun_Close();
             break;
 
-        case 7:
-            //打印所有指令信息
+        case 7: //打印所有指令信息
             MyUart_Send_PrintfString("[CMD 7]: Prints all command information.\n");
             List_All_Command();
             break;
         
-        case 8:
-            //单片机复位
+        case 8: //单片机复位
             MyUart_Send_PrintfString("[CMD 8]: Reset microcontroller.\n");
             rt_hw_cpu_reset();
 
-        default:
-            //无该指令
+        default: //无该指令
             MyUart_Send_PrintfString("[CMD]: Wrong command.\n");
             break;
         }
     }
 }
 
+/**
+ * @brief   协议解析初始化
+ */
 void MyUart_Agree_Init(void)
 {
     Register_MyUart_Recv_Callback(Agree_Analysis);

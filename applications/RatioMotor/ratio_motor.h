@@ -5,7 +5,7 @@
 #define RATIO_MOTOR_MAX_3508RPM    (469.0f)
 #define RATIO_MOTOR_MOTOR_RATIO    (3591.0f/187.0f)   //机械结构传动比
 #define RATIO_MOTOR_PERIOD         (1)                //定时器周期，单位ms
-#define RATIO_MOTOR_MAX_SPEED      (RATIO_MOTOR_MAX_3508RPM*RATIO_MOTOR_MOTOR_RATIO)
+#define RATIO_MOTOR_MAX_SPEED      (RATIO_MOTOR_MAX_3508RPM*RATIO_MOTOR_MOTOR_RATIO) //快转子最大rpm
 #define RATIO_MOTOR_MAX_CURRENT    (16384)
 
 #define DEFAULT_POS_MAX         (180)              //最大角度限位，单位度
@@ -15,8 +15,8 @@
 
 #define ADJUST_SPEED_RUN        (500)              //校准时的速度,单位小转子的rpm
 #define ADJUST_TIME             (300)              //校准判断时长,单位ms
-#define ADJUST_TIMEOUT          (((RATIO_MOTOR_MOTOR_RATIO/ADJUST_SPEED_RUN)*60*1000)/2)    //校准超时判断时长,单位ms
-#define ADJUST_POS_MARGIN       (2)                //堵转校准后预留的位置余量,单位度
+#define ADJUST_TIMEOUT          (((RATIO_MOTOR_MOTOR_RATIO/ADJUST_SPEED_RUN)*60*1000)/2)    //校准超时判断时长,单位ms(通过计算获得不同 ADJUST_SPEED_RUN 下,大致转过半圈所需的时间)
+#define ADJUST_POS_MARGIN       (2)                //堵转校准后(相对于靠堵转确定的端点位置)预留的位置余量,单位度
 
 /* 限制数值范围 */
 #define VALUE_CLAMP(val,min,max)    do{\
@@ -40,19 +40,19 @@ typedef enum
 typedef void (*Func_Arrive)(Motor_t const *,Target_e) ;
 typedef struct
 {
-    Target_e kind;
-    float pos;
+    Target_e kind;      //id作用
+    float pos;          //电机到达 pos角度值时,会自动触发arrive_cb回调
     rt_uint8_t flag;    //用于触发一次回调
 
-    float err_precision;      //角度误差精度
+    float err_precision;      //角度误差精度，单位度
     Func_Arrive arrive_cb;
 
 } Target_t;
 
 typedef enum
 {
-    ADJ_IDLE,
-    ADJ_IDLE_ERROR,
+    ADJ_IDLE,   //成功校准完后的空闲态
+    ADJ_IDLE_ERROR, //有问题(中途)退出的空闲态
 
     ADJ_CLOCKWISE,
     ADJ_CLOCKWISE_RUNNING,
@@ -62,18 +62,18 @@ typedef enum
     ADJ_ERROR,
     ADJ_SUCCESS,
 
-} Adjust_e;
+} Adjust_State_e;
 
 typedef struct
 {
-    Adjust_e state;
+    Adjust_State_e state;
     
-    rt_int32_t  cnt;
-    rt_int32_t  timeout_cnt;
+    rt_int32_t  cnt;            //堵转计数器
+    rt_int32_t  timeout_cnt;    //超时计数器
 
-    float pos_max;
-    float pos_min;
-    void (*complete)(float);
+    float pos_max;              //校准结果存放处,单位度,pos_max - pos_min大小取决于机械结构
+    float pos_min;              //和ratio_motor文件外的角度值不同,数值大小取决于上电位置
+    void (*complete)(float);    //校准完成回调
 
 } Adjust_t;
 
