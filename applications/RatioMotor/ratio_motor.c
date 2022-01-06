@@ -1,4 +1,4 @@
-#include "canister.h"
+#include "ratio_motor.h"
 #include "HCanID_data.h"
 #include "drv_canthread.h"
 #include <math.h>
@@ -14,10 +14,10 @@ static Target_t target_point[TARGET_NUM] = {
 static rt_uint8_t en_angle_loop = 1;   //置1为开启角度闭环
 static rt_uint8_t en_pos_adjust = 0;   //置1为开启位置的校准,TODO:改名
 
-static Adjust_t canister_adjust = {
+static Adjust_t RatioM_adjust = {
     .pos_max = DEFAULT_POS_MAX,
     .pos_min = DEFAULT_POS_MIN,
-    .adjust_complete = RT_NULL,
+    .complete = RT_NULL,
 };
 
 static void Target_Callback_Process(Target_t *aim)
@@ -41,13 +41,13 @@ static void Target_Callback_Process(Target_t *aim)
 void Target_Set_Pos(float pos, Target_e kind)
 {
     /* 检查边界合理性 */
-    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+    RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
 
     /* 角度补偿设定值 */
-    pos += canister_adjust.pos_min;
+    pos += RatioM_adjust.pos_min;
 
     /* 输入限幅 */
-    VALUE_CLAMP(pos,canister_adjust.pos_min,canister_adjust.pos_max);
+    VALUE_CLAMP(pos,RatioM_adjust.pos_min,RatioM_adjust.pos_max);
 
     target_point[kind].pos = pos;
 }
@@ -63,16 +63,16 @@ void Target_Set_Precision(float precision, Target_e kind)
     target_point[kind].err_precision = precision;
 }
 
-static struct rt_semaphore canister_sem;	
-static void Canister_IRQHandler(void *parameter)
+static struct rt_semaphore ratio_motor_sem;	
+static void Ratio_Motor_IRQHandler(void *parameter)
 {
-    rt_sem_release(&canister_sem);
+    rt_sem_release(&ratio_motor_sem);
 }
-static void Canister_Thread(void *parameter)
+static void Ratio_Motor_Thread(void *parameter)
 {
     while(1)
     {
-        rt_sem_take(&canister_sem, RT_WAITING_FOREVER);
+        rt_sem_take(&ratio_motor_sem, RT_WAITING_FOREVER);
 
         if (en_angle_loop == 1)
         {
@@ -87,7 +87,7 @@ static void Canister_Thread(void *parameter)
 }
 
 /* 单独开一个线程,提高电机闭环的实时性 */
-static void Canister_Callback_Thread(void *parameter)
+static void Ratio_Motor_Callback_Thread(void *parameter)
 {
     while(1)
     {
@@ -96,15 +96,14 @@ static void Canister_Callback_Thread(void *parameter)
             for (int i = 0; i < TARGET_NUM; i++)
                 Target_Callback_Process(&target_point[i]);
         }
-        
         rt_thread_mdelay(1);
     }
 }
 
-static void Canister_Motor_Init(void)
+static void Motor3508_Init(void)
 {
-    motor_init(&M3508,MOTOR_ID_1,CANISTER_MOTOR_RATIO,ANGLE_CTRL_FULL,8192,180,-180);//不选择ANGLE_CTRL_EXTRA,取消角度闭环的就近原则
-    pid_init(&M3508.ang,30,0,0,1000,CANISTER_MAX_SPEED, -CANISTER_MAX_SPEED);
+    motor_init(&M3508,MOTOR_ID_1,RATIO_MOTOR_MOTOR_RATIO,ANGLE_CTRL_FULL,8192,180,-180);//不选择ANGLE_CTRL_EXTRA,取消角度闭环的就近原则
+    pid_init(&M3508.ang,30,0,0,1000,RATIO_MOTOR_MAX_SPEED, -RATIO_MOTOR_MAX_SPEED);
     pid_init(&M3508.spe,15,0.05,10,1000,10000,-10000);
 
     /*等待电机第一次通信完毕*/
@@ -114,20 +113,20 @@ static void Canister_Motor_Init(void)
     }
 }
 
-rt_err_t Canister_Init(void)
+rt_err_t Ratio_Motor_Init(void)
 {
     rt_err_t res;
     rt_thread_t thread = RT_NULL;
 
-    Canister_Motor_Init();
+    Motor3508_Init();
 
     //初始化信号量
-    res = rt_sem_init(&canister_sem, "canister_sem", 0, RT_IPC_FLAG_FIFO);
+    res = rt_sem_init(&ratio_motor_sem, "RatioM_sem", 0, RT_IPC_FLAG_FIFO);
     if ( res != RT_EOK)
 		return res;
 
     //初始化线程
-    thread = rt_thread_create("Canister_Thread",Canister_Thread,RT_NULL,1024,11,10);
+    thread = rt_thread_create("RatioM_Thread",Ratio_Motor_Thread,RT_NULL,1024,11,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 
@@ -135,15 +134,15 @@ rt_err_t Canister_Init(void)
         return RT_ERROR;
 
     //创建线程定时器
-    rt_timer_t canister_timer = rt_timer_create("canister_timer",Canister_IRQHandler,
-                                                RT_NULL,CANISTER_PERIOD,
+    rt_timer_t ratio_motor_timer = rt_timer_create("RatioM_timer",Ratio_Motor_IRQHandler,
+                                                RT_NULL,RATIO_MOTOR_PERIOD,
                                                 RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
-    res = rt_timer_start(canister_timer);
+    res = rt_timer_start(ratio_motor_timer);
     if ( res != RT_EOK)
 		return res;
         
     //初始化线程
-    thread = rt_thread_create("Canis_cb",Canister_Callback_Thread,RT_NULL,1024,13,10);
+    thread = rt_thread_create("Canis_cb",Ratio_Motor_Callback_Thread,RT_NULL,1024,13,10);
     if(thread == RT_NULL)
         return RT_ERROR;
 
@@ -153,7 +152,7 @@ rt_err_t Canister_Init(void)
     return RT_EOK;
 }
 
-void Canister_Refresh_Motor(struct rt_can_msg *msg)
+void Ratio_Motor_Refresh_Motor(struct rt_can_msg *msg)
 {
     RT_ASSERT(msg != RT_NULL);
     motor_readmsg(msg,&M3508.dji);
@@ -161,66 +160,66 @@ void Canister_Refresh_Motor(struct rt_can_msg *msg)
 
 /* angle: 单位度 */
 /* 正方向为电机输出轴的逆时针方向 */
-void Canister_Set_Position(float angle)
+void Ratio_Motor_Set_Position(float angle)
 {
     /* 检查边界合理性 */
-    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+    RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
 
     Target_Set_Pos(angle,MOTOR_SET);
     
     /* 角度补偿设定值 */
-    angle += canister_adjust.pos_min;
+    angle += RatioM_adjust.pos_min;
 
     /* 输入限幅 */
-    VALUE_CLAMP(angle,canister_adjust.pos_min,canister_adjust.pos_max);
+    VALUE_CLAMP(angle,RatioM_adjust.pos_min,RatioM_adjust.pos_max);
 
     Motor_Write_SetAngle_ABS(&M3508,angle);
 }
 
-float Canister_Read_NowPos(void)
+float Ratio_Motor_Read_NowPos(void)
 {
     float angle = Motor_Read_NowAngle(&M3508);
 
     /* 角度补偿设定值 */
-    angle -= canister_adjust.pos_min;
+    angle -= RatioM_adjust.pos_min;
 
     return angle;
 }
 
-float Canister_Read_Pos_Range(void)
+float Ratio_Motor_Read_Pos_Range(void)
 {
     /* 检查边界合理性 */
-    RT_ASSERT(canister_adjust.pos_max > canister_adjust.pos_min);
+    RT_ASSERT(RatioM_adjust.pos_max > RatioM_adjust.pos_min);
 
     /* 角度补偿设定值 */
-    return canister_adjust.pos_max - canister_adjust.pos_min;
+    return RatioM_adjust.pos_max - RatioM_adjust.pos_min;
 }
 
-void Canister_Set_MaxSpeed(float out_limit)
+void Ratio_Motor_Set_MaxSpeed(float out_limit)
 {
     out_limit = fabs(out_limit);
-    VALUE_CLAMP(out_limit,0,CANISTER_MAX_SPEED);
+    VALUE_CLAMP(out_limit,0,RATIO_MOTOR_MAX_SPEED);
 
     M3508.ang.out_limit_up = out_limit;
     M3508.ang.out_limit_down = - out_limit;
 }
 
-void Canister_Set_MaxCurrent(float out_limit)
+void Ratio_Motor_Set_MaxCurrent(float out_limit)
 {
     out_limit = fabs(out_limit);
-    VALUE_CLAMP(out_limit,0,CANISTER_MAX_CURRENT);
+    VALUE_CLAMP(out_limit,0,RATIO_MOTOR_MAX_CURRENT);
 
     M3508.spe.out_limit_up = out_limit;
     M3508.spe.out_limit_down = - out_limit;
 }
 
 /* 调试pid用 */
-const Motor_t* Canister_Read_MotorData(void)
+const Motor_t* Ratio_Motor_Read_MotorData(void)
 {
     return &M3508;
 }
 
-static float Cansiter_Adjust_Pos(float speed_run)
+static float RatioM_Adjust_Pos(float speed_run)
 {
     static rt_int32_t _cnt = 0;
     static rt_int32_t timeout_cnt = 0;
@@ -244,7 +243,7 @@ static float Cansiter_Adjust_Pos(float speed_run)
 
                 en_angle_loop = 1;  //开启角度闭环
                 Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
-                // Canister_Set_Position(Canister_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
+                // Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
 
                 return Motor_Read_NowAngle(&M3508);
             }
@@ -265,7 +264,7 @@ static float Cansiter_Adjust_Pos(float speed_run)
                 
                 en_angle_loop = 1;  //开启角度闭环
                 Motor_Write_SetAngle_ABS(&M3508,Motor_Read_NowAngle(&M3508));
-                // Canister_Set_Position(Canister_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
+                // Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在当前的位置,TODO:待整理重复代码
 
                 en_pos_adjust = 2;//异常
                 MyUart_Send_PrintfString("Motor calibration timeout!\n");
@@ -284,27 +283,27 @@ static void Adjust_Thread(void *parameter)
     {
         if (en_pos_adjust == 1)
         {
-            temp_pos = Cansiter_Adjust_Pos(-ADJUST_SPEED_RUN);
+            temp_pos = RatioM_Adjust_Pos(-ADJUST_SPEED_RUN);
             if (en_pos_adjust == 2)
                 goto _adjust_error;
-            canister_adjust.pos_min = temp_pos;
+            RatioM_adjust.pos_min = temp_pos;
 
-            canister_adjust.pos_max = Cansiter_Adjust_Pos(ADJUST_SPEED_RUN);
+            RatioM_adjust.pos_max = RatioM_Adjust_Pos(ADJUST_SPEED_RUN);
             //检查正负性
-            if (canister_adjust.pos_max < canister_adjust.pos_min)
+            if (RatioM_adjust.pos_max < RatioM_adjust.pos_min)
                 en_pos_adjust = 2;
 
             if (en_pos_adjust == 2)
             {
-                canister_adjust.pos_max = DEFAULT_POS_MAX;
-                canister_adjust.pos_min = DEFAULT_POS_MIN;
+                RatioM_adjust.pos_max = DEFAULT_POS_MAX;
+                RatioM_adjust.pos_min = DEFAULT_POS_MIN;
                 goto _adjust_error;
             }
 
+            if (RatioM_adjust.complete != RT_NULL)
+                (*RatioM_adjust.complete)(RatioM_adjust.pos_max - RatioM_adjust.pos_min);
+                
             en_pos_adjust = 0;  //校准完毕
-
-            if (canister_adjust.adjust_complete != RT_NULL)
-                (*canister_adjust.adjust_complete)(canister_adjust.pos_max - canister_adjust.pos_min);
         }
 
     _adjust_error:
@@ -312,7 +311,7 @@ static void Adjust_Thread(void *parameter)
     }
 }
 
-rt_err_t Canister_Adjust_Init(void)
+rt_err_t RatioM_Adjust_Init(void)
 {
     //初始化线程
     rt_thread_t thread = rt_thread_create("Adjust_Thread",Adjust_Thread,RT_NULL,1024,13,10);
@@ -325,13 +324,13 @@ rt_err_t Canister_Adjust_Init(void)
 	return RT_EOK;
 }
 
-void Canister_Adjust_Start(void)
+void RatioM_Adjust_Start(void)
 {
     en_pos_adjust = 1;
 }
 
 //1为开启位置的校准,0为校准结束或者未开始校准,2是校准失败
-rt_uint8_t Canister_Get_Adjust_State(void)
+rt_uint8_t RatioM_Adjust_Get_State(void)
 {
     return en_pos_adjust;
 }
@@ -339,5 +338,5 @@ rt_uint8_t Canister_Get_Adjust_State(void)
 void Register_Adjust_Callback(void (*func)(float))
 {
     RT_ASSERT(func != RT_NULL);
-    canister_adjust.adjust_complete = func;
+    RatioM_adjust.complete = func;
 }

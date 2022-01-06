@@ -1,4 +1,4 @@
-#include "canister.h"
+#include "ratio_motor.h"
 #include <stdio.h>
 
 extern void Board_Base_Init(void);
@@ -13,7 +13,7 @@ static void Patrol_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
-    sprintf(txt,"%03.3f",Canister_Read_NowPos());
+    sprintf(txt,"%03.3f",Ratio_Motor_Read_NowPos());
     
     if (kind == PATROL_POS_START)
         rt_kprintf("Patrol Start: %s\n",txt);
@@ -28,12 +28,12 @@ static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
 {
     /* 输出到达设定值的当前角度值 */
     char txt[10];
-    sprintf(txt,"%03.3f",Canister_Read_NowPos());
+    sprintf(txt,"%03.3f",Ratio_Motor_Read_NowPos());
     rt_kprintf("PID: %s\n",txt);
 }
 
 /* 能实现电机的巡逻功能,并在到达目标点时,反馈数据 */
-void Test_Canister(void)
+void Test_Ratio_motor(void)
 {
     Target_Set_Pos(P_START_POS,PATROL_POS_START);
     Register_Target_Callback(Patrol_Callback,PATROL_POS_START);
@@ -48,12 +48,12 @@ void Test_Canister(void)
     {
         if (now_pos == PATROL_POS_START)
         {
-            Canister_Set_Position(P_END_POS);
+            Ratio_Motor_Set_Position(P_END_POS);
             rt_thread_mdelay(2000);
         }
         else if(now_pos == PATROL_POS_END)
         {
-            Canister_Set_Position(P_START_POS);
+            Ratio_Motor_Set_Position(P_START_POS);
             rt_thread_mdelay(2000);
         }
 
@@ -69,7 +69,7 @@ int callback_main(void)
 {
     Board_Base_Init();
 
-	Test_Canister();
+	Test_Ratio_motor();
 
     return 0;
 }

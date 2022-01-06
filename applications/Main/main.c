@@ -1,6 +1,6 @@
 #include "drv_canthread.h"
 #include <board.h>
-#include "canister.h"
+#include "ratio_motor.h"
 
 // #define EN_CALLBACK_TEST
 // #define EN_ADJUST_TEST
@@ -30,7 +30,7 @@ void Board_Base_Init(void)
     RT_ASSERT(res == RT_EOK);
 
     /* 电机初始化 */
-    Canister_Init();
+    Ratio_Motor_Init();
 }
 
 //TODO:分析所有线程的优先级,校准时间过长,打印和停止

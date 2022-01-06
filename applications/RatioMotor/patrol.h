@@ -1,6 +1,6 @@
 #ifndef __PATROL_H__
 #define __PATROL_H__
-#include "canister.h"
+#include "ratio_motor.h"
 
 
 #define DEFAULT_PATROL_START_POS    0    //单位度

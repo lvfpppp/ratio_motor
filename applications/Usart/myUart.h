@@ -21,15 +21,15 @@ typedef struct
     float  data2;
     rt_uint16_t tail;
 
-} Canister_Cmd_t;
+} Ratio_motor_Cmd_t;
 
 union uart_cmd
 {
-	Canister_Cmd_t cmd;
-	rt_uint8_t buff[sizeof(Canister_Cmd_t)];
+	Ratio_motor_Cmd_t cmd;
+	rt_uint8_t buff[sizeof(Ratio_motor_Cmd_t)];
 };
 
-typedef void (*Func_Uart_Recv)(const Canister_Cmd_t *data);
+typedef void (*Func_Uart_Recv)(const Ratio_motor_Cmd_t *data);
 
 rt_err_t MyUart_Init(void);
 void MyUart_Send(const void *buffer,rt_size_t size);

@@ -24,14 +24,14 @@ static void Patrol_Arrive_Callback(Motor_t const *motor,Target_e kind)
         /* 输出到达设定值的当前角度值 */
         if (kind == PATROL_POS_START)
         {
-            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %03.3f (angle)} ",Canister_Read_NowPos());
+            sprintf(Get_PrintfTxt(),"\n]=== {patrol: in start: %03.3f (angle)} ",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
             MyUart_Send_PrintfString("========>>>>\n");
         }
         else if (kind == PATROL_POS_END)
         {
             MyUart_Send_PrintfString("\n<<<<========");
-            sprintf(Get_PrintfTxt()," {patrol: in end  : %03.3f (angle)} ===[\n",Canister_Read_NowPos());
+            sprintf(Get_PrintfTxt()," {patrol: in end  : %03.3f (angle)} ===[\n",Ratio_Motor_Read_NowPos());
             MyUart_Send_PrintfTxt();
         }
 
@@ -69,7 +69,7 @@ static void Patrol_Thread(void *parameter)
             break;
 
         case PATROL_CLOSE:
-            Canister_Set_Position(Canister_Read_NowPos());//停在原地
+            Ratio_Motor_Set_Position(Ratio_Motor_Read_NowPos());//停在原地
             Patrol_State_Transfer(PATROL_IDLE);//马上转入空闲态,以防一直卡在原地
             break;
 
@@ -83,11 +83,11 @@ static void Patrol_Thread(void *parameter)
             break;
 
         case MOVE_TO_START:
-            Canister_Set_Position(patrol.start_pos);
+            Ratio_Motor_Set_Position(patrol.start_pos);
             break;
 
         case MOVE_TO_END:
-            Canister_Set_Position(patrol.end_pos);
+            Ratio_Motor_Set_Position(patrol.end_pos);
             break;
 
         default:
@@ -132,9 +132,9 @@ void Patrol_Fun_Open(void)
 void Patrol_Set_Pos(float start,float end)
 {
     /* 输入限幅 */
-    float canister_max = Canister_Read_Pos_Range();
-    VALUE_CLAMP(start,0,canister_max);
-    VALUE_CLAMP(end,0,canister_max);
+    float ratio_motor_max = Ratio_Motor_Read_Pos_Range();
+    VALUE_CLAMP(start,0,ratio_motor_max);
+    VALUE_CLAMP(end,0,ratio_motor_max);
 
     patrol.start_pos = start;
     patrol.end_pos = end;

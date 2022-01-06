@@ -3,8 +3,8 @@
 #include "patrol.h"
 
 
-static const rt_uint16_t agree_head = 0xABAA;
-static const rt_uint16_t agree_tail = 0x55CD;
+const rt_uint16_t agree_head = 0xABAA;
+const rt_uint16_t agree_tail = 0x55CD;
 
 
 static void List_All_Command(void)
@@ -14,7 +14,7 @@ static void List_All_Command(void)
     MyUart_Send_PrintfString("|------------------- +-------+-------+");   MyUart_Send_PrintfString("-------+------------------- |\n");
     sprintf(Get_PrintfTxt(),"| 0x%02X ",agree_head); 
     MyUart_Send_PrintfTxt();
-    sprintf(Get_PrintfTxt(),"(uint16)  (uint8) | (float) | (float) "); 
+    sprintf(Get_PrintfTxt(),"(uint16) | (uint8) | (float) | (float) "); 
     MyUart_Send_PrintfTxt();
     sprintf(Get_PrintfTxt(),"| 0x%02X (uint16) |\n",agree_tail); 
     MyUart_Send_PrintfTxt();
@@ -29,7 +29,7 @@ static void List_All_Command(void)
     MyUart_Send_PrintfString("+-----------------------------------------");   MyUart_Send_PrintfString("------------------------+\n");
 }
 
-static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
+static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 {
     RT_ASSERT(recv_cmd_p != RT_NULL);
 
@@ -42,7 +42,7 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
             sprintf(Get_PrintfTxt(),"[CMD 1]: set pos %03.3f\n\n",recv_cmd_p->data1);
             MyUart_Send_PrintfTxt();
             
-            Canister_Set_Position(recv_cmd_p->data1);
+            Ratio_Motor_Set_Position(recv_cmd_p->data1);
             break;
 
         case 2:
@@ -52,9 +52,9 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
                 float p_end = recv_cmd_p->data2;
 
                 // 输入限幅
-                float canister_max = Canister_Read_Pos_Range();
-                VALUE_CLAMP(p_start,0,canister_max);
-                VALUE_CLAMP(p_end,0,canister_max);
+                float ratio_motor_max = Ratio_Motor_Read_Pos_Range();
+                VALUE_CLAMP(p_start,0,ratio_motor_max);
+                VALUE_CLAMP(p_end,0,ratio_motor_max);
 
                 sprintf(Get_PrintfTxt(),"[CMD 2]: start %03.3f, end %03.3f\n\n",p_start,p_end);
                 MyUart_Send_PrintfTxt();
@@ -67,12 +67,12 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
             //开始校准,阻塞至校准完,TODO:加个校准超时停止和打印
             MyUart_Send_PrintfString("[CMD 3]: Now start calibrating the motor.\n\n");
 
-            Canister_Adjust_Start();
+            RatioM_Adjust_Start();
             //等待校准完毕
-            while(Canister_Get_Adjust_State() == 1){
+            while(RatioM_Adjust_Get_State() == 1){
                 rt_thread_mdelay(1);
             }
-            if (Canister_Get_Adjust_State() == 0)
+            if (RatioM_Adjust_Get_State() == 0)
                 MyUart_Send_PrintfString("[CMD 3]: successfully finished calibrating the motor.\n\n");
             else
                 MyUart_Send_PrintfString("[CMD 3]: Fail to finish calibrating the motor.\n\n");
@@ -83,8 +83,8 @@ static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
             sprintf(Get_PrintfTxt(),"[CMD 4]: I %6.1f, V %6.1f\n\n",recv_cmd_p->data1,recv_cmd_p->data2);
             MyUart_Send_PrintfTxt();
 
-            Canister_Set_MaxCurrent(recv_cmd_p->data1);
-            Canister_Set_MaxSpeed(recv_cmd_p->data2);
+            Ratio_Motor_Set_MaxCurrent(recv_cmd_p->data1);
+            Ratio_Motor_Set_MaxSpeed(recv_cmd_p->data2);
             break;
 
         case 5:

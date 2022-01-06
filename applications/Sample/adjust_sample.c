@@ -1,4 +1,4 @@
-#include "canister.h"
+#include "ratio_motor.h"
 #include <stdio.h>
 
 extern void Board_Base_Init(void);
@@ -17,13 +17,13 @@ static void Test_Adjust(void)
 {
     Register_Adjust_Callback(Adjust_Complete_Callback);
 
-    Canister_Adjust_Init();
-    Canister_Adjust_Start();
+    RatioM_Adjust_Init();
+    RatioM_Adjust_Start();
 
     while(1)
     {
-        if (Canister_Get_Adjust_State() == 0)
-            Canister_Set_Position(test_angle);
+        if (RatioM_Adjust_Get_State() == 0)
+            Ratio_Motor_Set_Position(test_angle);
         
         rt_thread_mdelay(10);
     }

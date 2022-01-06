@@ -1,4 +1,4 @@
-#include "canister.h"
+#include "ratio_motor.h"
 #include "myUart.h"
 #include "patrol.h"
 #include "uart_agree.h"
@@ -15,7 +15,7 @@ static void PID_Arrive_Callback(Motor_t const *motor,Target_e kind)
     
     /* 输出到达设定值的当前角度值 */
     MyUart_Send_PrintfString("+------------------------------------+\n");
-    sprintf(Get_PrintfTxt(),"|  PID steady state: %03.3f (angle)  |\n",Canister_Read_NowPos());
+    sprintf(Get_PrintfTxt(),"|  PID steady state: %03.3f (angle)  |\n",Ratio_Motor_Read_NowPos());
     MyUart_Send_PrintfTxt();
     MyUart_Send_PrintfString("+------------------------------------+\n");
 
@@ -44,15 +44,15 @@ static void Adjust_Part_Init(void)
 {
     Register_Adjust_Callback(Adjust_Complete_Callback);
 
-    Canister_Adjust_Init();
-    Canister_Adjust_Start();
+    RatioM_Adjust_Init();
+    RatioM_Adjust_Start();
 	
     //等待校准完毕
-    while(Canister_Get_Adjust_State() != 0){
+    while(RatioM_Adjust_Get_State() != 0){
         rt_thread_mdelay(1);
     }
 
-    // Canister_Set_Position(0);//停在0位
+    // Ratio_Motor_Set_Position(0);//停在0位
 }
 ////////////////////////////////////////////////////////////////////
 

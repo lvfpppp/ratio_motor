@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F103xB, USE_HAL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.;rt-thread\include;applications\Can;applications\Canister;applications\Main;applications\Motor;applications\Pid;applications\Usart;applications\Sample;board;board\CubeMX_Config\Inc;libraries\HAL_Drivers;libraries\HAL_Drivers\config;rt-thread\libcpu\arm\common;rt-thread\libcpu\arm\cortex-m3;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\finsh;rt-thread\components\libc\compilers\common;libraries\STM32F1xx_HAL\CMSIS\Device\ST\STM32F1xx\Include;libraries\STM32F1xx_HAL\STM32F1xx_HAL_Driver\Inc;libraries\STM32F1xx_HAL\CMSIS\Include</IncludePath>
+              <IncludePath>.;rt-thread\include;applications\Can;applications\Main;applications\Motor;applications\Pid;applications\RatioMotor;applications\Usart;applications\Sample;board;board\CubeMX_Config\Inc;libraries\HAL_Drivers;libraries\HAL_Drivers\config;rt-thread\libcpu\arm\common;rt-thread\libcpu\arm\cortex-m3;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\finsh;rt-thread\components\libc\compilers\common;libraries\STM32F1xx_HAL\CMSIS\Device\ST\STM32F1xx\Include;libraries\STM32F1xx_HAL\STM32F1xx_HAL_Driver\Inc;libraries\STM32F1xx_HAL\CMSIS\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -468,16 +468,6 @@
               <FilePath>applications\Can\drv_canthread.c</FilePath>
             </File>
             <File>
-              <FileName>canister.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Canister\canister.c</FilePath>
-            </File>
-            <File>
-              <FileName>patrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Canister\patrol.c</FilePath>
-            </File>
-            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\Main\main.c</FilePath>
@@ -491,6 +481,16 @@
               <FileName>pid.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\Pid\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>patrol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\RatioMotor\patrol.c</FilePath>
+            </File>
+            <File>
+              <FileName>ratio_motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>applications\RatioMotor\ratio_motor.c</FilePath>
             </File>
             <File>
               <FileName>myUart.c</FileName>

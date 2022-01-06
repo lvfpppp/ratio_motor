@@ -1,6 +1,6 @@
 #include "can_receive.h"
 #include "HCanID_data.h"
-#include "canister.h"
+#include "ratio_motor.h"
 
 
 /***
@@ -13,7 +13,7 @@ void can1_rec(struct rt_can_msg *msg)
     switch(msg->id)
     {
         case MOTOR_ID_1:
-            Canister_Refresh_Motor(msg);
+            Ratio_Motor_Refresh_Motor(msg);
             return;
 
         case MOTOR_ID_2:

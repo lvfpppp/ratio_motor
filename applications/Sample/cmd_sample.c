@@ -8,7 +8,7 @@ static const rt_uint16_t agree_tail = 0x55CD;
 
 static char feedback_txt[50];
 
-static void Agree_Analysis(const Canister_Cmd_t *recv_cmd_p)
+static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 {
     if (recv_cmd_p->head == agree_head && recv_cmd_p->tail == agree_tail)
     {
