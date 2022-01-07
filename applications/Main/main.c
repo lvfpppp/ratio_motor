@@ -3,13 +3,11 @@
 #include "ratio_motor.h"
 #include "myUart.h"
 
-// #define EN_CALLBACK_TEST    //callback_sample.c
 // #define EN_ADJUST_TEST      //adjust_sample.c
 // #define EN_PID_DEBUG        //PID_sample.c
 // #define EN_UART_CMD         //cmd_sample.c
 #define EN_ALL_FUN          //all_fun_sample.c
 
-extern int callback_main(void);
 extern int adjust_main(void);
 extern int pid_main(void);
 extern int cmd_main(void);
@@ -40,9 +38,7 @@ void Board_Base_Init(void)
 
 int main(void)
 {
-#if defined(EN_CALLBACK_TEST)
-    callback_main();
-#elif defined(EN_ADJUST_TEST)
+#if defined(EN_ADJUST_TEST)
     adjust_main();
 #elif defined(EN_PID_DEBUG)
     pid_main();

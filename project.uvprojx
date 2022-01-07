@@ -523,11 +523,6 @@
               <FilePath>applications\Sample\all_fun_sample.c</FilePath>
             </File>
             <File>
-              <FileName>callback_sample.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>applications\Sample\callback_sample.c</FilePath>
-            </File>
-            <File>
               <FileName>cmd_sample.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\Sample\cmd_sample.c</FilePath>

@@ -5,6 +5,7 @@
 
 extern void Board_Base_Init(void);
 
+/* JustFloat协议数据尾 */
 static const rt_uint8_t vofa_tail[4] = {0x00, 0x00, 0x80, 0x7f};
 
 /* 通过VOFA+上位机显示波形。然后在debug时，

@@ -58,6 +58,7 @@ static void Adjust_Part_Init(void)
 
 /**
  * @brief   所有功能的主函数
+ * @author  lfp
  */
 int all_fun_main(void)
 {

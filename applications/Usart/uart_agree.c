@@ -114,6 +114,7 @@ static void Agree_Analysis(const Ratio_motor_Cmd_t *recv_cmd_p)
 
 /**
  * @brief   协议解析初始化
+ * @author  lfp
  */
 void MyUart_Agree_Init(void)
 {

@@ -53,6 +53,7 @@ static void MyUart_Process_thread(void *parameter)
 /**
  * @brief   串口初始化
  * @return  错误码
+ * @author  lfp
  */
 rt_err_t MyUart_Init(void)
 {

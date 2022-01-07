@@ -23,7 +23,8 @@ static void Test_Adjust(void)
 
     while(1)
     {
-        Ratio_Motor_Set_Position(test_angle);
+        if (RatioM_Adjust_If_Finsh() == RT_TRUE)
+            Ratio_Motor_Set_Position(test_angle);
         
         rt_thread_mdelay(10);
     }
