@@ -69,7 +69,7 @@ int main(void) {
 
 - 列举一些测试时，经常使用的指令，如下，
 
-![image.png](/doc/image1.png )
+![image.png](./doc/image1.png )
 
 | 设置闭环角度0 | set angle 0 | AA AB 01 00 00 00 00 00 00 00 00 00 CD 55 00 00 |
 | --- | --- | --- |
@@ -209,8 +209,8 @@ int main(void) {
 <a name="JlvoB"></a>
 ### PID_sample.c
 &emsp;&emsp;通过VOFA+上位机显示波形。然后在keil debug时，修改 en_angle_loop 值来切换速度闭环和角度闭环。<br />(从速度闭环切到角度闭环时,注意清空 M3508.dji.loop 变量。否则设定角度闭环时，会转到loop为0时的角度才会停下。) 然后通过修改watch窗口的值（M3508的值）实现调参的功能。
-<br />&emsp;&emsp;**速度环的调试波形如下，**<br />![image.png](/doc/speed.png)
-<br />&emsp;&emsp;**角度环的调试波形如下，**<br />![image.png](/doc/angle.png)
+<br />&emsp;&emsp;**速度环的调试波形如下，**<br />![image.png](./doc/speed.png)
+<br />&emsp;&emsp;**角度环的调试波形如下，**<br />![image.png](./doc/angle.png)
 <a name="ZPdHP"></a>
 ### cmd_sample.c
 &emsp;&emsp;简易版的测试协议代码。输入cmd1~4就会返回发送的data1和data2。
