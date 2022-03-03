@@ -2,7 +2,7 @@
 #define __RATIO_MOTOR_H__
 #include "drv_motor.h"
 
-#define RATIO_MOTOR_MAX_3508RPM    (469.0f)
+#define RATIO_MOTOR_MAX_3508RPM    (150.0f)
 #define RATIO_MOTOR_MOTOR_RATIO    (3591.0f/187.0f)   //机械结构传动比
 #define RATIO_MOTOR_PERIOD         (1)                //定时器周期，单位ms
 #define RATIO_MOTOR_MAX_SPEED      (RATIO_MOTOR_MAX_3508RPM*RATIO_MOTOR_MOTOR_RATIO) //快转子最大rpm
@@ -13,10 +13,11 @@
 
 #define DEFAULT_ERR_PRECISION   (2.5)              //默认辨识精度,单位度
 
-#define ADJUST_SPEED_RUN        (500)              //校准时的速度,单位小转子的rpm
+#define ADJUST_SPEED_RUN        (200)              //校准时的速度,单位小转子的rpm
 #define ADJUST_TIME             (300)              //校准判断时长,单位ms
 #define ADJUST_TIMEOUT          (((RATIO_MOTOR_MOTOR_RATIO/ADJUST_SPEED_RUN)*60*1000)/2)    //校准超时判断时长,单位ms(通过计算获得不同 ADJUST_SPEED_RUN 下,大致转过半圈所需的时间)
-#define ADJUST_POS_MARGIN       (2)                //堵转校准后(相对于靠堵转确定的端点位置)预留的位置余量,单位度
+#define ADJUST_POS_MARGIN       (10)                //堵转校准后(相对于靠堵转确定的端点位置)预留的位置余量,单位度；因为校准结果有一到二度的误差。
+                                                    //所以位置余量至少预留2度。不过预留2度，可能会导致角度从180度闭环到0度时，因为超调导致电机开始震荡。实际尽可能更大些。
 
 /* 限制数值范围 */
 #define VALUE_CLAMP(val,min,max)    do{\

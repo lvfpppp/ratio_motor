@@ -1,5 +1,5 @@
 #include "myUart.h"
-
+#include <board.h>
 static struct rt_messagequeue my_uart_mq;
 static rt_uint8_t msg_pool[64];
 static rt_device_t MyUart_Serial;
@@ -113,7 +113,13 @@ void Register_MyUart_Recv_Callback(Func_Uart_Recv func)
  */
 void MyUart_Send(const void *buffer,rt_size_t size)
 {
-    rt_device_write(MyUart_Serial,0,buffer,size);
+    rt_pin_write(RS485_EN_PIN, PIN_HIGH);  
+    rt_thread_mdelay(5);
+
+	rt_device_write(MyUart_Serial,0,buffer,size);
+
+    rt_thread_mdelay(5);
+	rt_pin_write(RS485_EN_PIN, PIN_LOW);
 }
 
 /**
@@ -140,9 +146,15 @@ char *Get_PrintfTxt(void)
  */
 void MyUart_Send_PrintfTxt(void)
 {
-    rt_device_write(MyUart_Serial,0,printf_txt,rt_strlen(printf_txt));
-    rt_thread_mdelay(10);//不使用延时会有bug(后发送的字符会覆盖前面的),目前不清楚原因
+    rt_pin_write(RS485_EN_PIN, PIN_HIGH);  
+    rt_thread_mdelay(5);
 
+	rt_device_write(MyUart_Serial,0,printf_txt,rt_strlen(printf_txt));
+    
+    rt_thread_mdelay(5);
+	rt_pin_write(RS485_EN_PIN, PIN_LOW);  
+
+    rt_thread_mdelay(5);//不使用延时会有bug(后发送的字符会覆盖前面的),目前不清楚原因
     rt_mutex_release(&printf_txt_mutex);
 }
 

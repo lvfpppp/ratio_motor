@@ -129,8 +129,8 @@ static void Ratio_Motor_Thread(void *parameter)
 static void Motor3508_Init(void)
 {
     motor_init(&M3508,MOTOR_ID_1,RATIO_MOTOR_MOTOR_RATIO,ANGLE_CTRL_FULL,8192,180,-180);//不选择ANGLE_CTRL_EXTRA,取消角度闭环的就近原则
-    pid_init(&M3508.ang,30,0,0,1000,RATIO_MOTOR_MAX_SPEED, -RATIO_MOTOR_MAX_SPEED);
-    pid_init(&M3508.spe,15,0.05,10,1000,10000,-10000);
+    pid_init(&M3508.ang,10,0.01,0,1000,RATIO_MOTOR_MAX_SPEED, -RATIO_MOTOR_MAX_SPEED);
+    pid_init(&M3508.spe,15,0.05,10,500,10000,-10000);
 
     /*等待电机第一次通信完毕*/
 	while(M3508.dji.Data_Valid == 0) 

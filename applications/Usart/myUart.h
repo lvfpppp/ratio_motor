@@ -3,8 +3,10 @@
 #include <rtthread.h>
 #include <stdio.h>
 
-#define MY_USE_UART         "uart2"
+#define MY_USE_UART         "uart1"
 #define PRINTF_TXT_SIZE     64
+
+#define RS485_EN_PIN     GET_PIN(A,8)
 
 struct Uart_Msg
 {
